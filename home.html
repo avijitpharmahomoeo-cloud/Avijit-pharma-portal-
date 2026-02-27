@@ -19,14 +19,12 @@
             100% { transform: scale(1); }
         }
 
-        /* Prevent iOS zoom on focus */
         input, select, textarea { font-size: 16px !important; }
 
         @media (max-width: 768px) {
             .mobile-hide { display: none; }
         }
 
-        /* Sidebar Transition */
         #sideMenu {
             transition: transform 0.3s ease-in-out;
             transform: translateX(100%);
@@ -153,20 +151,17 @@
             </a>
         </div>
         <div class="p-6 border-t border-slate-100 text-center">
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Avijit Pharma v2.8</p>
+            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Avijit Pharma v2.9</p>
         </div>
     </div>
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto p-4 md:p-6">
-        
-        <!-- DUAL ALERTS -->
+        <!-- ALERTS -->
         <div id="alertBanner" class="hidden mb-6 space-y-3">
             <div class="bg-red-50 border border-red-100 rounded-2xl p-4 md:p-5">
                 <div class="flex items-center gap-3 mb-3">
-                    <div class="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center low-stock-pulse">
-                        <i class="fas fa-bell text-sm"></i>
-                    </div>
+                    <div class="w-8 h-8 bg-red-600 text-white rounded-full flex items-center justify-center low-stock-pulse"><i class="fas fa-bell text-sm"></i></div>
                     <h3 class="text-red-900 font-bold">Critical Alerts</h3>
                 </div>
                 <div id="alertItemsList" class="flex flex-wrap gap-2"></div>
@@ -216,12 +211,9 @@
         </div>
 
         <div id="mobileCardGrid" class="md:hidden grid grid-cols-1 gap-4"></div>
-
         <div id="noData" class="hidden py-20 text-center">
-            <div class="bg-slate-200 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-box-open text-slate-400 text-3xl"></i>
-            </div>
-            <p class="text-slate-500 font-medium">No inventory data available.</p>
+            <i class="fas fa-box-open text-slate-400 text-3xl mb-4"></i>
+            <p class="text-slate-500">Inventory is empty.</p>
         </div>
     </main>
 
@@ -231,107 +223,104 @@
         <button onclick="openModal('salesModal')" class="flex-1 bg-slate-900 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2"><i class="fas fa-shopping-cart"></i> Sale</button>
     </div>
 
-    <!-- Modals Background -->
-    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden transition-opacity duration-300"></div>
+    <!-- Modals Overlay -->
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden transition-opacity" onclick="closeAllModals()"></div>
 
-    <!-- Medicine Form Modal -->
+    <!-- Medicine Modal -->
     <div id="medicineModal" class="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-[70] hidden p-4">
         <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
             <div class="p-6 bg-blue-600 text-white flex justify-between items-center">
-                <h3 id="medModalTitle" class="text-xl font-bold">Manage Stock</h3>
+                <h3 id="medModalTitle" class="text-xl font-bold">Stock Entry</h3>
                 <button onclick="closeModal('medicineModal')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20"><i class="fas fa-times"></i></button>
             </div>
             <form id="medForm" class="p-6 space-y-4 overflow-y-auto">
                 <input type="hidden" id="editIndex">
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Medicine Name</label>
-                    <input type="text" id="medName" required placeholder="Enter name" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Name</label>
+                    <input type="text" id="medName" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                        <select id="medCategory" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                        <select id="medCategory" class="w-full px-4 py-3 bg-slate-50 border rounded-xl">
                             <option>Mother Tincture</option><option>Dilution</option><option>Trituration</option><option>Biochemic</option><option>Patent</option><option>Liquid</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Stock Unit</label>
-                        <select id="medUnit" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                            <option value="pcs">Pcs (Pieces)</option><option value="ml">ml (Milliliters)</option><option value="l">L (Liters)</option><option value="g">g (Grams)</option><option value="mg">mg (Milligrams)</option>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Unit</label>
+                        <select id="medUnit" class="w-full px-4 py-3 bg-slate-50 border rounded-xl">
+                            <option value="pcs">Pieces</option><option value="ml">ml</option><option value="l">Litre</option><option value="g">gram</option>
                         </select>
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Type / Power</label>
-                        <input type="text" id="medType" placeholder="30ml / 200CH" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Type/Power</label>
+                        <input type="text" id="medType" class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Expiry Date</label>
-                        <input type="date" id="medExpiry" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Expiry</label>
+                        <input type="date" id="medExpiry" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buy Price (₹ / unit)</label>
-                        <input type="number" step="0.01" id="medBuyPrice" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buying Price (₹)</label>
+                        <input type="number" step="0.01" id="medBuyPrice" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Sell Price (₹ / unit)</label>
-                        <input type="number" step="0.01" id="medSellPrice" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Selling Price (₹)</label>
+                        <input type="number" step="0.01" id="medSellPrice" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Stock Quantity</label>
-                    <input type="number" id="medStock" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Quantity</label>
+                    <input type="number" id="medStock" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition-all mt-4">Save Inventory</button>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl">Save Stock</button>
             </form>
         </div>
     </div>
 
-    <!-- Sale Form Modal -->
+    <!-- Sale Modal -->
     <div id="salesModal" class="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-[70] hidden p-4">
         <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
             <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
-                <h3 class="text-xl font-bold">New Sale</h3>
+                <h3 class="text-xl font-bold">Record Sale</h3>
                 <button onclick="closeModal('salesModal')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20"><i class="fas fa-times"></i></button>
             </div>
             <form id="salesForm" class="p-6 space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
-                    <input type="date" id="saleDate" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                    <input type="date" id="saleDate" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
                 </div>
                 <div class="relative">
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Search Medicine</label>
-                    <div class="relative">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="saleMedSearch" placeholder="Type name..." class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" oninput="filterSaleMedicines()" autocomplete="off">
-                    </div>
+                    <input type="text" id="saleMedSearch" placeholder="Start typing..." class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none" oninput="filterSaleMedicines()" autocomplete="off">
                     <input type="hidden" id="selectedMedId" required>
-                    <div id="saleSearchResults" class="hidden absolute top-full left-0 right-0 bg-white border border-slate-200 rounded-xl mt-1 premium-shadow search-results-container"></div>
+                    <div id="saleSearchResults" class="hidden absolute top-full left-0 right-0 bg-white border rounded-xl mt-1 premium-shadow search-results-container"></div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Quantity <span id="saleUnitDisplay" class="text-blue-600"></span></label>
-                    <input type="number" id="saleQty" value="1" min="1" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Quantity Sold <span id="saleUnitDisplay" class="text-blue-600"></span></label>
+                    <input type="number" id="saleQty" value="1" min="1" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
                 </div>
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-sm font-semibold text-slate-700 text-[11px] uppercase tracking-wider">Use Fixed MRP?</span>
-                        <input type="checkbox" id="useStockPrice" checked onchange="toggleSalePriceField()" class="w-6 h-6 rounded-md text-blue-600 cursor-pointer">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Fixed MRP?</span>
+                        <input type="checkbox" id="useStockPrice" checked onchange="toggleSalePriceField()" class="w-6 h-6 rounded text-blue-600 cursor-pointer">
                     </div>
                     <div id="customPriceDiv" class="hidden mb-2">
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Selling Price (₹ / unit)</label>
-                        <input type="number" step="0.01" id="customSellPrice" class="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl outline-none">
+                        <input type="number" step="0.01" id="customSellPrice" class="w-full px-4 py-3 bg-white border rounded-xl outline-none">
                     </div>
-                    <div id="priceIndicator" class="text-xs text-slate-500 font-bold bg-white px-3 py-2 rounded-lg border border-slate-100 italic">Select medicine...</div>
+                    <div id="priceIndicator" class="text-xs text-slate-500 font-bold bg-white px-3 py-2 rounded-lg border italic">Select medicine...</div>
                 </div>
-                <button type="submit" id="saleSubmitBtn" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> Complete Sale & Sync</button>
+                <button type="submit" id="saleSubmitBtn" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> Submit Sale</button>
             </form>
         </div>
     </div>
 
-    <!-- Toast Notification -->
+    <!-- Notifications -->
     <div id="toast" class="fixed top-6 right-6 left-6 md:left-auto md:w-80 z-[100] transform -translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3">
         <div id="toastIcon" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"></div>
         <p id="toastMsg" class="text-sm font-semibold"></p>
@@ -340,7 +329,7 @@
     <iframe name="hidden_iframe" id="hidden_iframe" class="hidden"></iframe>
 
     <script>
-        const STORAGE_KEY = 'avijit_pharma_stock_v2.8';
+        const STORAGE_KEY = 'avijit_pharma_stock_v2.9';
         const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf8xYihWDT3c5L6F_X9CYUyPC0_U_mIMUVJsowog7Fkx13JHg/formResponse";
         let inventory = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
@@ -368,51 +357,49 @@
 
         function renderInventory() {
             const search = document.getElementById('searchInput').value.toLowerCase();
-            const categoryFilt = document.getElementById('categoryFilter').value;
-            const filtered = inventory.filter(m => {
-                return (m.name.toLowerCase().includes(search)) && (categoryFilt === "All" || m.category === categoryFilt);
-            });
+            const cat = document.getElementById('categoryFilter').value;
+            const filtered = inventory.filter(m => (m.name.toLowerCase().includes(search)) && (cat === "All" || m.category === cat));
 
-            const desktopBody = document.getElementById('desktopTableBody');
-            const mobileGrid = document.getElementById('mobileCardGrid');
+            const desktop = document.getElementById('desktopTableBody');
+            const mobile = document.getElementById('mobileCardGrid');
             const noData = document.getElementById('noData');
             document.getElementById('resultCount').textContent = `${filtered.length} items`;
 
-            if (filtered.length === 0) { desktopBody.innerHTML = ''; mobileGrid.innerHTML = ''; noData.classList.remove('hidden'); }
+            if (filtered.length === 0) { desktop.innerHTML = ''; mobile.innerHTML = ''; noData.classList.remove('hidden'); }
             else {
                 noData.classList.add('hidden');
-                desktopBody.innerHTML = filtered.map(med => {
-                    const gIdx = inventory.findIndex(i => i.id === med.id);
+                desktop.innerHTML = filtered.map(med => {
+                    const idx = inventory.findIndex(i => i.id === med.id);
                     const low = med.stock <= 5;
                     const expStatus = getExpiryStatus(med.expiryDate);
-                    const expColor = expStatus === 'expired' ? 'text-red-600 font-bold' : (expStatus === 'near' ? 'text-orange-500 font-bold' : 'text-slate-500');
+                    const expCol = expStatus === 'expired' ? 'text-red-600 font-bold' : (expStatus === 'near' ? 'text-orange-500 font-bold' : 'text-slate-500');
                     return `<tr class="hover:bg-slate-50">
                         <td class="px-6 py-5"><div class="font-bold text-slate-900">${med.name}</div><div class="text-[10px] text-slate-400 font-mono">${med.id}</div></td>
                         <td class="px-6 py-5"><span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase">${med.category}</span><div class="text-[10px] text-slate-500 mt-1">${med.type} (${med.unit})</div></td>
                         <td class="px-6 py-5 text-right font-bold text-slate-700">₹${med.sellPrice}/${med.unit}</td>
                         <td class="px-6 py-5 text-center"><span class="${low ? 'low-stock-pulse' : 'font-bold text-slate-900'} text-lg">${med.stock}</span> <span class="text-xs text-slate-400">${med.unit}</span></td>
-                        <td class="px-6 py-5 text-center ${expColor} text-sm">${new Date(med.expiryDate).toLocaleDateString()}</td>
+                        <td class="px-6 py-5 text-center ${expCol} text-sm">${new Date(med.expiryDate).toLocaleDateString()}</td>
                         <td class="px-6 py-5 text-right"><div class="flex justify-end gap-2">
-                            <button onclick="editMedicine(${gIdx})" class="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition-all"><i class="fas fa-edit"></i></button>
-                            <button onclick="deleteMedicine(${gIdx})" class="p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all"><i class="fas fa-trash"></i></button>
+                            <button onclick="editMedicine(${idx})" class="p-2 text-blue-600 hover:bg-blue-50 rounded-xl"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteMedicine(${idx})" class="p-2 text-red-600 hover:bg-red-50 rounded-xl"><i class="fas fa-trash"></i></button>
                         </div></td>
                     </tr>`;
                 }).join('');
 
-                mobileGrid.innerHTML = filtered.map(med => {
-                    const gIdx = inventory.findIndex(i => i.id === med.id);
+                mobile.innerHTML = filtered.map(med => {
+                    const idx = inventory.findIndex(i => i.id === med.id);
                     const low = med.stock <= 5;
                     const expStatus = getExpiryStatus(med.expiryDate);
                     return `<div class="glass-card p-4 rounded-2xl flex flex-col gap-3 relative border-l-4 ${low || expStatus === 'expired' ? 'border-l-red-500' : 'border-l-blue-200'}">
                         <div class="flex justify-between items-start">
-                            <div><h4 class="font-bold text-slate-900 text-lg">${med.name}</h4><div class="flex items-center gap-2 mt-1"><span class="bg-blue-100 text-blue-800 text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">${med.category}</span></div></div>
-                            <div class="text-right"><div class="text-lg font-black text-slate-900">₹${med.sellPrice}/${med.unit}</div></div>
+                            <div><h4 class="font-bold text-slate-900 text-lg">${med.name}</h4><div class="flex items-center gap-2 mt-1"><span class="bg-blue-100 text-blue-800 text-[9px] font-black px-1.5 py-0.5 rounded uppercase">${med.category}</span></div></div>
+                            <div class="text-right font-black text-slate-900">₹${med.sellPrice}/${med.unit}</div>
                         </div>
                         <div class="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-center">
-                            <div class="flex-1"><p class="text-[8px] uppercase font-bold text-slate-400">Stock</p><p class="${low ? 'text-red-600 font-black' : 'font-bold'}">${med.stock} ${med.unit}</p></div>
+                            <div class="flex-1"><p class="text-[8px] uppercase font-bold text-slate-400">Stock</p><p class="${low ? 'text-red-600 font-bold' : 'font-bold'}">${med.stock} ${med.unit}</p></div>
                             <div class="flex-1 border-l border-slate-200"><p class="text-[8px] uppercase font-bold text-slate-400">Expiry</p><p class="${expStatus === 'expired' ? 'text-red-600 font-black' : (expStatus === 'near' ? 'text-orange-500 font-bold' : 'font-bold')} text-xs">${new Date(med.expiryDate).toLocaleDateString()}</p></div>
                         </div>
-                        <div class="flex gap-2"><button onclick="editMedicine(${gIdx})" class="flex-1 py-2.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold">Edit</button></div>
+                        <button onclick="editMedicine(${idx})" class="py-2.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold">Edit Stock</button>
                     </div>`;
                 }).join('');
             }
@@ -420,36 +407,30 @@
 
         function updateStats() {
             document.getElementById('totalMeds').textContent = inventory.length;
-            const total = inventory.reduce((acc, curr) => acc + (curr.sellPrice * curr.stock), 0);
-            document.getElementById('totalValue').textContent = '₹' + total.toLocaleString('en-IN', {minimumFractionDigits: 2});
+            const totalVal = inventory.reduce((a, b) => a + (b.sellPrice * b.stock), 0);
+            document.getElementById('totalValue').textContent = '₹' + totalVal.toLocaleString('en-IN', {minimumFractionDigits: 2});
             
-            const lowItems = inventory.filter(m => m.stock <= 5);
-            const expItems = inventory.filter(m => getExpiryStatus(m.expiryDate) !== 'healthy');
-            document.getElementById('lowStockCount').textContent = lowItems.length;
-            document.getElementById('expiryAlertCount').textContent = expItems.length;
+            const lowCount = inventory.filter(m => m.stock <= 5).length;
+            const expCount = inventory.filter(m => getExpiryStatus(m.expiryDate) !== 'healthy').length;
+            document.getElementById('lowStockCount').textContent = lowCount;
+            document.getElementById('expiryAlertCount').textContent = expCount;
             
             const badge = document.getElementById('notifBadge');
-            const totalAlerts = lowItems.length + expItems.length;
-            if (totalAlerts > 0) { badge.textContent = totalAlerts; badge.classList.remove('hidden'); } else badge.classList.add('hidden');
+            if (lowCount + expCount > 0) { badge.textContent = lowCount + expCount; badge.classList.remove('hidden'); } else badge.classList.add('hidden');
 
             const banner = document.getElementById('alertBanner');
             const list = document.getElementById('alertItemsList');
-            if (totalAlerts > 0) {
+            if (lowCount + expCount > 0) {
                 banner.classList.remove('hidden');
                 let html = '';
-                lowItems.forEach(m => {
-                    const idx = inventory.findIndex(i => i.id === m.id);
-                    html += `<div class="bg-white border border-red-200 px-3 py-2 rounded-xl flex items-center gap-3 shadow-sm">
-                        <div class="flex flex-col"><span class="text-xs font-bold text-slate-900">${m.name}</span><span class="text-[9px] text-red-600 font-black uppercase">Low: ${m.stock} ${m.unit}</span></div>
-                        <button onclick="editMedicine(${idx})" class="bg-red-500 text-white text-[9px] font-bold px-3 py-1.5 rounded-lg">REFILL</button>
-                    </div>`;
-                });
-                expItems.forEach(m => {
+                inventory.filter(m => m.stock <= 5 || getExpiryStatus(m.expiryDate) !== 'healthy').forEach(m => {
                     const idx = inventory.findIndex(i => i.id === m.id);
                     const status = getExpiryStatus(m.expiryDate);
-                    html += `<div class="${status === 'expired' ? 'bg-red-600' : 'bg-orange-500'} text-white px-3 py-2 rounded-xl flex items-center gap-3 shadow-sm">
-                        <div class="flex flex-col"><span class="text-xs font-bold">${m.name}</span><span class="text-[9px] font-black uppercase">${status.toUpperCase()}</span></div>
-                        <button onclick="editMedicine(${idx})" class="bg-white ${status === 'expired' ? 'text-red-600' : 'text-orange-600'} text-[9px] font-bold px-3 py-1.5 rounded-lg">CHECK</button>
+                    const isLow = m.stock <= 5;
+                    html += `<div class="bg-white border p-2 rounded-xl flex items-center gap-3 shadow-sm">
+                        <div class="flex flex-col"><span class="text-xs font-bold">${m.name}</span>
+                        <span class="text-[9px] font-black uppercase ${isLow ? 'text-red-600' : 'text-orange-600'}">${isLow ? 'Low Stock' : status.toUpperCase()}</span></div>
+                        <button onclick="editMedicine(${idx})" class="bg-slate-900 text-white text-[9px] font-bold px-3 py-1.5 rounded-lg">MANAGE</button>
                     </div>`;
                 });
                 list.innerHTML = html;
@@ -458,22 +439,22 @@
 
         function filterSaleMedicines() {
             const query = document.getElementById('saleMedSearch').value.toLowerCase();
-            const results = document.getElementById('saleSearchResults');
-            if (query.trim() === "") { results.classList.add('hidden'); return; }
-            const filtered = inventory.filter(m => m.name.toLowerCase().includes(query) || m.type.toLowerCase().includes(query));
-            if (filtered.length > 0) {
-                results.innerHTML = filtered.map(m => `<div onclick="selectSaleMedicine('${m.id}', '${m.name} (${m.type})', '${m.unit}')" class="p-3 search-result-item flex justify-between items-center border-b border-slate-50 last:border-none">
-                    <div><div class="text-sm font-bold text-slate-800">${m.name}</div><div class="text-[10px] text-slate-500 uppercase font-medium">${m.category}</div></div>
-                    <div class="text-right"><div class="text-xs font-bold text-blue-600">${m.stock} ${m.unit}</div><div class="text-[10px] text-slate-400">₹${m.sellPrice}</div></div>
+            const res = document.getElementById('saleSearchResults');
+            if (!query.trim()) { res.classList.add('hidden'); return; }
+            const fil = inventory.filter(m => m.name.toLowerCase().includes(query));
+            if (fil.length) {
+                res.innerHTML = fil.map(m => `<div onclick="selectSaleMedicine('${m.id}', '${m.name}', '${m.unit}')" class="p-3 search-result-item flex justify-between items-center border-b">
+                    <div><div class="text-sm font-bold">${m.name}</div><div class="text-[10px] uppercase">${m.category}</div></div>
+                    <div class="text-right text-xs font-bold text-blue-600">${m.stock} ${m.unit}</div>
                 </div>`).join('');
-                results.classList.remove('hidden');
-            } else { results.innerHTML = '<div class="p-4 text-center text-xs text-slate-400">No matching medicine</div>'; results.classList.remove('hidden'); }
+                res.classList.remove('hidden');
+            } else { res.innerHTML = '<div class="p-4 text-xs text-slate-400">No results</div>'; res.classList.remove('hidden'); }
         }
 
         function selectSaleMedicine(id, name, unit) {
             document.getElementById('selectedMedId').value = id;
             document.getElementById('saleMedSearch').value = name;
-            document.getElementById('saleUnitDisplay').textContent = `(in ${unit})`;
+            document.getElementById('saleUnitDisplay').textContent = `(Enter number only)`;
             document.getElementById('saleSearchResults').classList.add('hidden');
             updateSalePriceInfo();
         }
@@ -482,27 +463,22 @@
             document.getElementById('modalOverlay').classList.remove('hidden');
             document.getElementById(id).classList.remove('hidden');
             document.body.style.overflow = 'hidden';
-            if (id === 'salesModal') {
-                document.getElementById('saleDate').valueAsDate = new Date();
-                document.getElementById('saleMedSearch').value = "";
-                document.getElementById('selectedMedId').value = "";
-                document.getElementById('saleUnitDisplay').textContent = "";
-                updateSalePriceInfo();
-            }
+            if (id === 'salesModal') document.getElementById('saleDate').valueAsDate = new Date();
         }
 
         function closeModal(id) {
             document.getElementById('modalOverlay').classList.add('hidden');
             document.getElementById(id).classList.add('hidden');
             document.body.style.overflow = 'auto';
-            if (id === 'medicineModal') { document.getElementById('medForm').reset(); document.getElementById('editIndex').value = ''; }
         }
+
+        function closeAllModals() { closeModal('medicineModal'); closeModal('salesModal'); toggleSideMenu(false); }
 
         document.getElementById('medForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const editIdx = document.getElementById('editIndex').value;
+            const idx = document.getElementById('editIndex').value;
             const data = {
-                id: editIdx !== "" ? inventory[editIdx].id : 'AVP-' + Math.random().toString(36).substr(2, 5).toUpperCase(),
+                id: idx !== "" ? inventory[idx].id : 'AVP-' + Math.random().toString(36).substr(2, 5).toUpperCase(),
                 name: document.getElementById('medName').value,
                 category: document.getElementById('medCategory').value,
                 unit: document.getElementById('medUnit').value,
@@ -512,9 +488,8 @@
                 sellPrice: parseFloat(document.getElementById('medSellPrice').value),
                 stock: parseInt(document.getElementById('medStock').value)
             };
-            if (editIdx !== "") inventory[editIdx] = data; else inventory.push(data);
-            saveToStorage(); closeModal('medicineModal');
-            showToast("Inventory updated", "success");
+            if (idx !== "") inventory[idx] = data; else inventory.push(data);
+            saveToStorage(); closeAllModals(); showToast("Stock updated", "success");
         });
 
         function editMedicine(idx) {
@@ -528,20 +503,19 @@
             document.getElementById('medBuyPrice').value = m.buyPrice;
             document.getElementById('medSellPrice').value = m.sellPrice;
             document.getElementById('medStock').value = m.stock;
-            document.getElementById('medModalTitle').textContent = "Edit Item";
             openModal('medicineModal');
         }
 
         function deleteMedicine(idx) {
-            if (confirm("Delete this record?")) { inventory.splice(idx, 1); saveToStorage(); showToast("Record deleted", "info"); }
+            if (confirm("Delete this?")) { inventory.splice(idx, 1); saveToStorage(); showToast("Deleted", "info"); }
         }
 
         function updateSalePriceInfo() {
-            const medId = document.getElementById('selectedMedId').value;
-            const med = inventory.find(i => i.id === medId);
+            const mId = document.getElementById('selectedMedId').value;
+            const med = inventory.find(i => i.id === mId);
             const ind = document.getElementById('priceIndicator');
             if (med) {
-                ind.innerHTML = `MRP: <span class="text-slate-900">₹${med.sellPrice}/${med.unit}</span> | Avail: <span class="text-blue-600">${med.stock} ${med.unit}</span>`;
+                ind.innerHTML = `MRP: ₹${med.sellPrice}/${med.unit} | Stock: ${med.stock} ${med.unit}`;
                 if (document.getElementById('useStockPrice').checked) document.getElementById('customSellPrice').value = med.sellPrice;
             } else ind.textContent = "Select medicine...";
         }
@@ -550,53 +524,52 @@
 
         document.getElementById('salesForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            const medId = document.getElementById('selectedMedId').value;
-            const qty = parseInt(document.getElementById('saleQty').value);
-            if (!medId) { showToast("Select a medicine!", "error"); return; }
-            const medIdx = inventory.findIndex(m => m.id === medId);
-            const med = inventory[medIdx];
+            const mId = document.getElementById('selectedMedId').value;
+            const qty = parseFloat(document.getElementById('saleQty').value);
+            if (!mId) { showToast("Select a medicine!", "error"); return; }
+            const idx = inventory.findIndex(m => m.id === mId);
+            const med = inventory[idx];
             if (med.stock < qty) { showToast("Insufficient stock!", "error"); return; }
             
             const btn = document.getElementById('saleSubmitBtn');
-            btn.disabled = true; btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Syncing...';
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Processing...';
             
-            const sellPrice = document.getElementById('useStockPrice').checked ? med.sellPrice : parseFloat(document.getElementById('customSellPrice').value);
-            const payload = new URLSearchParams();
-            payload.append('entry.664553955', document.getElementById('saleDate').value);
-            payload.append('entry.1352198491', `${med.name} (${med.unit})`);
-            payload.append('entry.385278366', `${qty} ${med.unit}`);
-            payload.append('entry.2088116483', med.buyPrice);
-            payload.append('entry.1600120543', sellPrice);
+            // MATH: Total Amount
+            const unitPrice = document.getElementById('useStockPrice').checked ? med.sellPrice : parseFloat(document.getElementById('customSellPrice').value);
+            const totalAmount = (qty * unitPrice).toFixed(2);
+
+            // PAYLOAD: Clean numerical submission
+            const pay = new URLSearchParams();
+            pay.append('entry.664553955', document.getElementById('saleDate').value);
+            pay.append('entry.1352198491', med.name);
+            pay.append('entry.385278366', qty); // Numeric only
+            pay.append('entry.2088116483', med.buyPrice);
+            pay.append('entry.1600120543', totalAmount); // Calculated Total Amount
 
             const form = document.createElement('form');
             form.action = GOOGLE_FORM_URL; form.method = "POST"; form.target = "hidden_iframe";
-            for (const [k, v] of payload) { const i = document.createElement('input'); i.type="hidden"; i.name=k; i.value=v; form.appendChild(i); }
+            for (const [k, v] of pay) { const i = document.createElement('input'); i.type="hidden"; i.name=k; i.value=v; form.appendChild(i); }
             document.body.appendChild(form); form.submit(); document.body.removeChild(form);
 
-            inventory[medIdx].stock -= qty;
+            inventory[idx].stock -= qty;
             saveToStorage();
 
             setTimeout(() => {
-                btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Complete Sale & Sync';
-                closeModal('salesModal'); showToast("Sale synced", "success");
+                btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Submit Sale';
+                closeAllModals(); showToast(`Sale of ₹${totalAmount} recorded`, "success");
+                document.getElementById('salesForm').reset();
             }, 1000);
         });
 
-        function showToast(msg, type) {
-            const t = document.getElementById('toast');
-            const icon = document.getElementById('toastIcon');
-            const bg = { success: 'bg-emerald-500', error: 'bg-red-500', info: 'bg-blue-500' };
-            icon.className = `w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${bg[type]}`;
-            icon.innerHTML = type === 'success' ? '<i class="fas fa-check"></i>' : '<i class="fas fa-info"></i>';
-            document.getElementById('toastMsg').textContent = msg;
-            t.classList.remove('-translate-y-20', 'opacity-0');
-            setTimeout(() => t.classList.add('-translate-y-20', 'opacity-0'), 3000);
+        function showToast(m, t) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = m;
+            toast.classList.remove('-translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('-translate-y-20', 'opacity-0'), 3000);
         }
 
         document.getElementById('searchInput').addEventListener('input', renderInventory);
         document.getElementById('categoryFilter').addEventListener('change', renderInventory);
-        document.addEventListener('click', (e) => { if (!e.target.closest('#saleSearchResults') && e.target.id !== 'saleMedSearch') document.getElementById('saleSearchResults').classList.add('hidden'); });
-
         renderInventory(); updateStats();
     </script>
 </body>

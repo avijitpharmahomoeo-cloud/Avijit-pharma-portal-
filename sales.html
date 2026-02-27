@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Insights Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide-react/0.263.1/lucide-react.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .premium-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .premium-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-10 text-center">
+            <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 uppercase">SALES</h1>
+            <p class="text-slate-500 mt-2 font-medium">Pharmacy Performance Insights</p>
+        </header>
+
+        <!-- Filters Section -->
+        <div class="premium-card rounded-2xl p-6 mb-8 flex flex-wrap items-end gap-6">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-semibold text-slate-600 mb-2">View Type</label>
+                <select id="viewType" onchange="handleViewChange()" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                    <option value="daily">Daily View</option>
+                    <option value="monthly">Monthly View</option>
+                    <option value="yearly">Yearly View</option>
+                </select>
+            </div>
+
+            <div id="datePickerContainer" class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-semibold text-slate-600 mb-2">Select Date</label>
+                <input type="date" id="dateInput" onchange="filterData()" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+            </div>
+
+            <div id="monthPickerContainer" class="flex-1 min-w-[200px] hidden">
+                <label class="block text-sm font-semibold text-slate-600 mb-2">Select Month</label>
+                <input type="month" id="monthInput" onchange="filterData()" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+            </div>
+
+            <div id="yearPickerContainer" class="flex-1 min-w-[200px] hidden">
+                <label class="block text-sm font-semibold text-slate-600 mb-2">Select Year</label>
+                <input type="number" id="yearInput" placeholder="YYYY" min="2000" max="2100" onchange="filterData()" class="w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+            </div>
+
+            <button onclick="fetchSheetData()" class="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors flex items-center gap-2">
+                <span id="refreshIcon">Refresh</span>
+                <div id="loadingSpinner" class="loader hidden"></div>
+            </button>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="premium-card rounded-2xl p-6">
+                <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Revenue</p>
+                <h3 class="text-3xl font-bold text-slate-900" id="totalRevenue">₹0.00</h3>
+                <p class="text-xs text-green-600 mt-2 font-medium" id="revenueCount">0 transactions</p>
+            </div>
+            <div class="premium-card rounded-2xl p-6">
+                <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Net Profit</p>
+                <h3 class="text-3xl font-bold text-blue-600" id="totalProfit">₹0.00</h3>
+                <p class="text-xs text-slate-400 mt-2 font-medium">Margin: <span id="profitMargin">0%</span></p>
+            </div>
+            <div class="premium-card rounded-2xl p-6">
+                <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Top Medicine</p>
+                <h3 class="text-xl font-bold text-slate-900 truncate" id="topMedicine">N/A</h3>
+                <p class="text-xs text-slate-400 mt-2 font-medium" id="topMedicineQty">0 units sold</p>
+            </div>
+            <div class="premium-card rounded-2xl p-6">
+                <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Items Sold</p>
+                <h3 class="text-3xl font-bold text-slate-900" id="totalItems">0</h3>
+                <p class="text-xs text-slate-400 mt-2 font-medium">Distinct Products: <span id="distinctCount">0</span></p>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="premium-card rounded-2xl p-8">
+                <h4 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    Medicine Distribution (Quantity)
+                </h4>
+                <div class="relative h-[300px]">
+                    <canvas id="medicinePieChart"></canvas>
+                </div>
+            </div>
+            <div class="premium-card rounded-2xl p-8">
+                <h4 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    Sales vs Profit Analysis
+                </h4>
+                <div class="relative h-[300px]">
+                    <canvas id="salesBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="premium-card rounded-2xl overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center">
+                <h4 class="text-lg font-bold text-slate-800">Recent Transactions</h4>
+                <div id="statusIndicator" class="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">Live Connection</div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Date</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Medicine Name</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Qty</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Selling Price</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Profit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salesTableBody" class="divide-y divide-slate-100">
+                        <!-- Rows injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="emptyState" class="p-12 text-center hidden">
+                <p class="text-slate-400 font-medium">No sales data found for the selected period.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = '1CQs_E72eIqL9_SL08vcNdrozzJXDwefvnGyzVxlMAOQ';
+        const GID = '0';
+        let rawData = [];
+        let pieChart, barChart;
+
+        // Initialize App
+        window.onload = function() {
+            // Set default inputs
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateInput').value = today;
+            document.getElementById('monthInput').value = today.substring(0, 7);
+            document.getElementById('yearInput').value = new Date().getFullYear();
+            
+            fetchSheetData();
+        };
+
+        function handleViewChange() {
+            const view = document.getElementById('viewType').value;
+            document.getElementById('datePickerContainer').classList.toggle('hidden', view !== 'daily');
+            document.getElementById('monthPickerContainer').classList.toggle('hidden', view !== 'monthly');
+            document.getElementById('yearPickerContainer').classList.toggle('hidden', view !== 'yearly');
+            filterData();
+        }
+
+        async function fetchSheetData() {
+            const spinner = document.getElementById('loadingSpinner');
+            const icon = document.getElementById('refreshIcon');
+            spinner.classList.remove('hidden');
+            icon.classList.add('hidden');
+
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                // Crucial extraction logic requested by user
+                const regex = /google\.visualization\.Query\.setResponse\((.*)\);/;
+                const match = text.match(regex);
+                
+                if (match && match[1]) {
+                    const json = JSON.parse(match[1]);
+                    processSheetData(json.table);
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                showNotification("Failed to connect to Google Sheets.");
+            } finally {
+                spinner.classList.add('hidden');
+                icon.classList.remove('hidden');
+            }
+        }
+
+        function processSheetData(table) {
+            rawData = table.rows.map(row => {
+                const cells = row.c;
+                return {
+                    date: parseSheetDate(cells[1]),
+                    name: cells[2]?.v || 'Unknown',
+                    qty: parseFloat(cells[3]?.v || 0),
+                    buyPrice: parseFloat(cells[4]?.v || 0),
+                    sellPrice: parseFloat(cells[5]?.v || 0)
+                };
+            }).filter(item => item.name !== 'Unknown');
+
+            filterData();
+        }
+
+        function parseSheetDate(cell) {
+            if (!cell || !cell.v) return null;
+            if (typeof cell.v === 'string' && cell.v.includes('Date')) {
+                const parts = cell.v.match(/\d+/g);
+                return new Date(parts[0], parts[1], parts[2]);
+            }
+            return new Date(cell.v);
+        }
+
+        function filterData() {
+            const view = document.getElementById('viewType').value;
+            const dateInput = document.getElementById('dateInput').value;
+            const monthInput = document.getElementById('monthInput').value;
+            const yearInput = document.getElementById('yearInput').value;
+
+            let filtered = [];
+
+            if (view === 'daily') {
+                const targetDate = new Date(dateInput);
+                filtered = rawData.filter(item => {
+                    return item.date && 
+                           item.date.getFullYear() === targetDate.getFullYear() &&
+                           item.date.getMonth() === targetDate.getMonth() &&
+                           item.date.getDate() === targetDate.getDate();
+                });
+            } else if (view === 'monthly') {
+                const [y, m] = monthInput.split('-');
+                filtered = rawData.filter(item => {
+                    return item.date && 
+                           item.date.getFullYear() === parseInt(y) &&
+                           (item.date.getMonth() + 1) === parseInt(m);
+                });
+            } else if (view === 'yearly') {
+                filtered = rawData.filter(item => {
+                    return item.date && item.date.getFullYear() === parseInt(yearInput);
+                });
+            }
+
+            updateDashboard(filtered);
+        }
+
+        function updateDashboard(data) {
+            let totalRevenue = 0;
+            let totalCost = 0;
+            let totalItems = 0;
+            const medStats = {};
+
+            data.forEach(item => {
+                const revenue = item.qty * item.sellPrice;
+                const cost = item.qty * item.buyPrice;
+                const profit = revenue - cost;
+
+                totalRevenue += revenue;
+                totalCost += cost;
+                totalItems += item.qty;
+
+                if (!medStats[item.name]) {
+                    medStats[item.name] = { qty: 0, revenue: 0, profit: 0 };
+                }
+                medStats[item.name].qty += item.qty;
+                medStats[item.name].revenue += revenue;
+                medStats[item.name].profit += profit;
+            });
+
+            const totalProfit = totalRevenue - totalCost;
+            const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+            // Find Top Medicine
+            let topMed = 'N/A';
+            let topQty = 0;
+            for (let name in medStats) {
+                if (medStats[name].qty > topQty) {
+                    topQty = medStats[name].qty;
+                    topMed = name;
+                }
+            }
+
+            // Update UI with INR Symbol
+            const currencyFormatter = new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                minimumFractionDigits: 2
+            });
+
+            document.getElementById('totalRevenue').innerText = currencyFormatter.format(totalRevenue);
+            document.getElementById('totalProfit').innerText = currencyFormatter.format(totalProfit);
+            document.getElementById('profitMargin').innerText = `${margin.toFixed(1)}%`;
+            document.getElementById('revenueCount').innerText = `${data.length} transactions`;
+            document.getElementById('totalItems').innerText = totalItems.toLocaleString();
+            document.getElementById('distinctCount').innerText = Object.keys(medStats).length;
+            document.getElementById('topMedicine').innerText = topMed;
+            document.getElementById('topMedicineQty').innerText = `${topQty} units sold`;
+
+            renderTable(data, currencyFormatter);
+            renderCharts(medStats);
+            
+            document.getElementById('emptyState').classList.toggle('hidden', data.length > 0);
+        }
+
+        function renderTable(data, formatter) {
+            const body = document.getElementById('salesTableBody');
+            body.innerHTML = '';
+            
+            const sorted = [...data].sort((a, b) => b.date - a.date);
+
+            sorted.slice(0, 10).forEach(item => {
+                const profit = (item.sellPrice - item.buyPrice) * item.qty;
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition-colors";
+                row.innerHTML = `
+                    <td class="px-6 py-4 text-sm text-slate-600 font-medium">${item.date.toLocaleDateString()}</td>
+                    <td class="px-6 py-4 text-sm text-slate-900 font-bold">${item.name}</td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${item.qty}</td>
+                    <td class="px-6 py-4 text-sm text-slate-900 text-right font-medium">${formatter.format(item.sellPrice)}</td>
+                    <td class="px-6 py-4 text-sm font-semibold text-right ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">
+                        ${formatter.format(profit)}
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+        }
+
+        function renderCharts(medStats) {
+            const labels = Object.keys(medStats);
+            const qtyData = labels.map(l => medStats[l].qty);
+            const revenueData = labels.map(l => medStats[l].revenue);
+            const profitData = labels.map(l => medStats[l].profit);
+
+            if (pieChart) pieChart.destroy();
+            const pieCtx = document.getElementById('medicinePieChart').getContext('2d');
+            pieChart = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: qtyData,
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#6366f1'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 10 } } }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            if (barChart) barChart.destroy();
+            const barCtx = document.getElementById('salesBarChart').getContext('2d');
+            barChart = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Revenue', data: revenueData, backgroundColor: '#3b82f6', borderRadius: 6 },
+                        { label: 'Profit', data: profitData, backgroundColor: '#10b981', borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'top', align: 'end' }
+                    }
+                }
+            });
+        }
+
+        function showNotification(msg) {
+            const indicator = document.getElementById('statusIndicator');
+            indicator.innerText = msg;
+            indicator.classList.replace('bg-green-100', 'bg-red-100');
+            indicator.classList.replace('text-green-700', 'text-red-700');
+        }
+    </script>
+</body>
+</html>

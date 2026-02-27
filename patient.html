@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avijit Pharma Patient Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .premium-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #print-section, #print-section * {
+                visibility: visible;
+            }
+            #print-section {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                padding: 40px;
+                display: block !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        #print-section {
+            display: none;
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800">
+
+    <!-- Main Navigation -->
+    <nav class="bg-white border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+                        <i class="fas fa-hospital-user text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-xl tracking-tight text-slate-900">Avijit Pharma</h1>
+                        <p class="text-[10px] uppercase tracking-widest text-blue-600 font-semibold">Official Patient Portal</p>
+                    </div>
+                </div>
+                <div id="loading-indicator" class="flex items-center gap-2 text-slate-400 text-sm">
+                    <div class="loader"></div>
+                    <span>Synchronizing Database...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Dashboard Header -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+            <div>
+                <h2 class="text-3xl font-bold text-slate-900">Patient Directory</h2>
+                <p class="text-slate-500 mt-1">Manage and access centralized medical records</p>
+            </div>
+            <div class="relative w-full md:w-96">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" placeholder="Search by name or case..." 
+                    class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all premium-shadow">
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div id="patientContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards will be injected here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-20">
+            <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-user-slash text-2xl text-slate-400"></i>
+            </div>
+            <h3 class="text-lg font-medium text-slate-900">No patients found</h3>
+            <p class="text-slate-500">Try adjusting your search terms</p>
+        </div>
+    </main>
+
+    <!-- Hidden Print Template -->
+    <div id="print-section">
+        <div class="border-b-2 border-slate-900 pb-6 mb-8 flex justify-between items-start">
+            <div>
+                <h1 class="text-xs uppercase tracking-[0.2em] font-bold text-slate-500 mb-2">Internal Medical Document</h1>
+                <h2 class="text-2xl font-serif font-bold text-slate-900">Avijit pharma offcial database presents this theory.</h2>
+            </div>
+            <div class="text-right text-sm text-slate-500">
+                <p>Report ID: <span id="print-id"></span></p>
+                <p>Generated: <span id="print-date"></span></p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-8 mb-10">
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-slate-400">Patient Name</label>
+                    <p id="print-name" class="text-xl font-bold border-b pb-1"></p>
+                </div>
+                <div class="flex gap-10">
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Age</label>
+                        <p id="print-age" class="text-lg font-semibold"></p>
+                    </div>
+                    <div>
+                        <label class="text-[10px] uppercase font-bold text-slate-400">Gender</label>
+                        <p id="print-gender" class="text-lg font-semibold"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] uppercase font-bold text-slate-400">Contact Number</label>
+                    <p id="print-phone" class="text-xl font-bold"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 p-8 rounded-lg border border-slate-200">
+            <h3 class="text-[10px] uppercase font-black text-slate-900 mb-4 border-b border-slate-300 pb-2">Medical Case Study & Analysis</h3>
+            <div id="print-case-study" class="text-slate-800 leading-relaxed text-justify italic font-serif text-lg">
+            </div>
+        </div>
+
+        <div class="mt-20 border-t pt-8 flex justify-between items-center opacity-50 italic text-sm">
+            <p>Confidential Pharma Records - Authorized Access Only</p>
+            <p>Page 01 of 01</p>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_ID = '1XEhrz4rk-hJkuxzxcxNdMML9B2IxLFuwpKKd1OAdeTo';
+        const GID = '0';
+        const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&tq&gid=${GID}`;
+        
+        let patients = [];
+
+        async function fetchPatientData() {
+            try {
+                const response = await fetch(URL);
+                const text = await response.text();
+                
+                // Use the requested Regex to extract JSON
+                const regex = /google\.visualization\.Query\.setResponse\((.*)\);/;
+                const match = text.match(regex);
+                
+                if (match && match[1]) {
+                    const data = JSON.parse(match[1]);
+                    const rows = data.table.rows;
+                    
+                    // Map data based on column instructions:
+                    // Tab 3 (index 2): Name
+                    // Tab 4 (index 3): Age
+                    // Tab 5 (index 4): Gender
+                    // Tab 6 (index 5): Phone
+                    // Tab 7 (index 6): Case Study
+                    patients = rows.map((row, index) => {
+                        const cols = row.c;
+                        return {
+                            id: index + 1,
+                            name: cols[2] ? cols[2].v : 'N/A',
+                            age: cols[3] ? cols[3].v : 'N/A',
+                            gender: cols[4] ? cols[4].v : 'N/A',
+                            phone: cols[5] ? cols[5].v : 'N/A',
+                            caseStudy: cols[6] ? cols[6].v : 'No case study recorded.'
+                        };
+                    }).filter(p => p.name !== 'N/A');
+
+                    renderPatients(patients);
+                    document.getElementById('loading-indicator').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('loading-indicator').innerHTML = '<span class="text-red-500">Connection Failed</span>';
+            }
+        }
+
+        function renderPatients(data) {
+            const container = document.getElementById('patientContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (data.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.innerHTML = data.map(patient => `
+                <div class="bg-white rounded-2xl p-6 border border-slate-100 premium-shadow group hover:border-blue-300 transition-all duration-300">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-bold text-lg">
+                            ${patient.name.charAt(0)}
+                        </div>
+                        <div class="text-right">
+                            <span class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Status</span>
+                            <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full">ACTIVE</span>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">${patient.name}</h3>
+                    
+                    <div class="flex gap-4 mt-2 mb-4 text-sm text-slate-500">
+                        <span><i class="fas fa-calendar-alt mr-2 text-blue-400"></i>${patient.age} Yrs</span>
+                        <span><i class="fas fa-venus-mars mr-2 text-blue-400"></i>${patient.gender}</span>
+                    </div>
+
+                    <div class="bg-slate-50 rounded-lg p-3 mb-6 text-sm text-slate-600 border border-slate-100">
+                        <p class="font-bold uppercase text-[9px] text-slate-400 mb-1">Latest Case Study</p>
+                        <p class="line-clamp-2">${patient.caseStudy}</p>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <a href="tel:${patient.phone}" class="flex-1 bg-white border border-slate-200 text-slate-700 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
+                            <i class="fas fa-phone-alt"></i> Call
+                        </a>
+                        <button onclick="downloadPDF(${JSON.stringify(patient).replace(/"/g, '&quot;')})" class="flex-1 bg-slate-900 text-white py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 hover:bg-black transition-colors">
+                            <i class="fas fa-file-pdf"></i> Download
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function downloadPDF(patient) {
+            // Populate hidden print section
+            document.getElementById('print-id').textContent = 'AP-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            document.getElementById('print-date').textContent = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+            document.getElementById('print-name').textContent = patient.name;
+            document.getElementById('print-age').textContent = patient.age;
+            document.getElementById('print-gender').textContent = patient.gender;
+            document.getElementById('print-phone').textContent = patient.phone;
+            document.getElementById('print-case-study').textContent = patient.caseStudy;
+
+            // Trigger Print Dialog
+            window.print();
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = patients.filter(p => 
+                p.name.toLowerCase().includes(term) || 
+                p.caseStudy.toLowerCase().includes(term)
+            );
+            renderPatients(filtered);
+        });
+
+        // Initialize
+        window.onload = fetchPatientData;
+    </script>
+</body>
+</html>

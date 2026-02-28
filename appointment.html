@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic Appointments Dashboard</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for premium iconography -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        /* Custom scrollbar for a polished look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- Top Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="bg-blue-600 text-white p-2 rounded-lg mr-3 shadow-sm">
+                    <i data-lucide="stethoscope" class="w-5 h-5"></i>
+                </div>
+                <h1 class="text-xl font-bold text-slate-800 tracking-tight">Clinic Dashboard</h1>
+            </div>
+            <button onclick="fetchData()" class="flex items-center space-x-2 text-sm text-slate-500 hover:text-blue-600 font-medium transition-colors bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-md border border-slate-200">
+                <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i>
+                <span class="hidden sm:inline">Refresh Data</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Stats Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center space-x-4 transition-all hover:shadow-md">
+                <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Filtered Appointments</p>
+                    <h2 class="text-3xl font-bold text-slate-800" id="statTotalApps">0</h2>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center space-x-4 transition-all hover:shadow-md">
+                <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <i data-lucide="banknote" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Calculated Revenue</p>
+                    <h2 class="text-3xl font-bold text-slate-800" id="statTotalRev">₹0</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters Row -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col lg:flex-row gap-4">
+            <div class="flex-1 relative">
+                <i data-lucide="search" class="w-5 h-5 absolute left-3 top-2.5 text-slate-400"></i>
+                <input type="text" id="searchInput" placeholder="Search by patient name or phone..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+            </div>
+            <div class="lg:w-56 relative">
+                <i data-lucide="calendar" class="w-5 h-5 absolute left-3 top-2.5 text-slate-400"></i>
+                <input type="date" id="dateFilter" class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow text-slate-700">
+            </div>
+            <div class="lg:w-64 relative">
+                <i data-lucide="user" class="w-5 h-5 absolute left-3 top-2.5 text-slate-400"></i>
+                <select id="doctorFilter" class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white text-slate-700">
+                    <option value="">All Doctors</option>
+                </select>
+                <i data-lucide="chevron-down" class="w-4 h-4 absolute right-3 top-3 text-slate-400 pointer-events-none"></i>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loader" class="flex flex-col justify-center items-center py-20">
+            <i data-lucide="loader-2" class="w-10 h-10 animate-spin text-blue-600 mb-4"></i>
+            <span class="text-slate-500 font-medium">Loading your appointments...</span>
+        </div>
+
+        <!-- Data Table Container -->
+        <div id="tableContainer" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left whitespace-nowrap">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-xs font-semibold">
+                        <tr>
+                            <th class="p-4">Patient Info</th>
+                            <th class="p-4">Doctor</th>
+                            <th class="p-4">Schedule</th>
+                            <th class="p-4">Mode</th>
+                            <th class="p-4">Phone Number</th>
+                            <th class="p-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100">
+                        <!-- Dynamic Rows Injected Here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Google Sheet Configuration
+        const sheetId = '13D8oL6ZUe8ehD5-881I0NPbn6mMeMTejVT80sfeZz_0';
+        const gid = '0';
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=${gid}`;
+
+        let rawData = [];
+        let doctorsList = new Set();
+        let filtersInitialized = false;
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Safe extraction of cell data handling various formats sent by Gviz
+        function getCell(row, index) {
+            if (!row || !row.c || !row.c[index]) return "";
+            let cell = row.c[index];
+            if (cell.f !== undefined && cell.f !== null) return String(cell.f).trim();
+            if (cell.v !== undefined && cell.v !== null) return String(cell.v).trim();
+            return "";
+        }
+
+        // Convert common date formats into standard YYYY-MM-DD for accurate `<input type="date">` filtering
+        function normalizeDate(dateStr) {
+            if (!dateStr) return "";
+            
+            // Handle specific Gviz Date format (e.g. "Date(2023,10,5)")
+            let match = dateStr.match(/Date\((\d+),\s*(\d+),\s*(\d+)\)/);
+            if (match) {
+                return `${match[1]}-${(parseInt(match[2])+1).toString().padStart(2,'0')}-${match[3].padStart(2,'0')}`;
+            }
+
+            // Handle standard string formats (Assumes DD/MM/YYYY or DD-MM-YYYY natively)
+            const parts = dateStr.split(/[\/\-]/);
+            if (parts.length === 3) {
+                if (parts[2].length === 4) { // DD/MM/YYYY
+                     return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                }
+                if (parts[0].length === 4) { // YYYY/MM/DD
+                     return `${parts[0]}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+                }
+            }
+            
+            return dateStr;
+        }
+
+        async function fetchData() {
+            const loader = document.getElementById('loader');
+            const tableContainer = document.getElementById('tableContainer');
+            const refreshIcon = document.getElementById('refreshIcon');
+            
+            if (refreshIcon) refreshIcon.classList.add('animate-spin');
+            
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                // Using Regex to extract JSON block out of the google.visualization wrapper
+                const regex = /google\.visualization\.Query\.setResponse\(([\s\S]*)\);/;
+                const match = text.match(regex);
+                
+                if (match) {
+                    const json = JSON.parse(match[1]);
+                    processData(json.table.rows);
+                    
+                    loader.classList.add('hidden');
+                    tableContainer.classList.remove('hidden');
+                } else {
+                    throw new Error("Invalid response format from Google Sheets");
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                loader.innerHTML = `
+                    <div class="text-red-500 flex flex-col items-center py-10 text-center">
+                        <i data-lucide="alert-triangle" class="w-12 h-12 mb-3"></i>
+                        <h3 class="font-bold text-lg">Connection Error</h3>
+                        <p class="text-sm mt-1">Unable to load appointments. Please ensure your Google Sheet access is set to 'Anyone with the link can view'.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+            } finally {
+                if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+            }
+        }
+
+        function processData(rows) {
+            rawData = rows.map((row, index) => {
+                const doctor = getCell(row, 1);
+                if (doctor) doctorsList.add(doctor);
+
+                const dateRaw = getCell(row, 5);
+                
+                return {
+                    id: index,
+                    doctor: doctor,
+                    patient: getCell(row, 2),
+                    age: getCell(row, 3),
+                    gender: getCell(row, 4),
+                    dateRaw: dateRaw,
+                    dateNorm: normalizeDate(dateRaw),
+                    time: getCell(row, 6),
+                    phone: getCell(row, 7),
+                    mode: getCell(row, 8)
+                };
+            }).filter(r => r.patient); // Only keep valid rows mapped to a patient
+
+            if (!filtersInitialized) {
+                populateFilters();
+                filtersInitialized = true;
+            }
+            
+            filterData();
+        }
+
+        function populateFilters() {
+            // Populate Doctors
+            const docSelect = document.getElementById('doctorFilter');
+            doctorsList.forEach(doc => {
+                const opt = document.createElement('option');
+                opt.value = doc;
+                opt.textContent = doc;
+                docSelect.appendChild(opt);
+            });
+
+            // Set Default Date to Today (This enforces "Keep page empty until new consultancy adds" rule)
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('dateFilter').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        function filterData() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const dateFilter = document.getElementById('dateFilter').value; // Outputs YYYY-MM-DD
+            const docFilter = document.getElementById('doctorFilter').value;
+
+            const filtered = rawData.filter(row => {
+                const matchSearch = row.patient.toLowerCase().includes(searchTerm) || String(row.phone).includes(searchTerm);
+                const matchDate = !dateFilter || row.dateNorm === dateFilter;
+                const matchDoc = !docFilter || row.doctor === docFilter;
+                
+                return matchSearch && matchDate && matchDoc;
+            });
+
+            renderTable(filtered);
+            updateStats(filtered);
+        }
+
+        function updateStats(data) {
+            let totalAppointments = data.length;
+            let totalRevenue = 0;
+            
+            data.forEach(row => {
+                const mode = String(row.mode).toLowerCase().trim();
+                // Applies calculated revenue based on Mode
+                if (mode.includes('online')) totalRevenue += 200;
+                else if (mode.includes('offline')) totalRevenue += 300;
+            });
+
+            document.getElementById('statTotalApps').innerText = totalAppointments;
+            document.getElementById('statTotalRev').innerText = '₹' + totalRevenue;
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-16 text-slate-500 bg-white">
+                            <i data-lucide="folder-open" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
+                            <p class="font-medium text-slate-700 mb-1">No appointments found</p>
+                            <p class="text-sm">The list stays empty until an appointment matches the selected date or criteria.</p>
+                        </td>
+                    </tr>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            data.forEach(row => {
+                // Ensure Phone numbers don't break tel:/wa.me links
+                const safePhone = String(row.phone).replace(/\D/g, '');
+                
+                // Pre-build URL-encoded auto messages
+                const ptMsg = encodeURIComponent(`Hello ${row.patient},\nThis is to confirm your appointment with ${row.doctor} on ${row.dateRaw} at ${row.time}.\nMode: ${row.mode}.`);
+                const docMsg = encodeURIComponent(`*New Appointment Details:*\nPatient: ${row.patient}\nAge/Gender: ${row.age} / ${row.gender}\nDate: ${row.dateRaw}\nTime: ${row.time}\nMode: ${row.mode}\nPhone: ${row.phone}`);
+
+                // Visual Tag formatting logic
+                const isOnline = String(row.mode).toLowerCase().includes('online');
+                const badgeClass = isOnline ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-indigo-100 text-indigo-700 border-indigo-200';
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors group";
+                
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <div class="font-medium text-slate-800">${row.patient}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">${row.age} years • ${row.gender}</div>
+                    </td>
+                    <td class="p-4">
+                        <div class="inline-flex items-center text-slate-700 font-medium bg-slate-100 px-2 py-1 rounded">
+                            ${row.doctor}
+                        </div>
+                    </td>
+                    <td class="p-4">
+                        <div class="text-slate-800">${row.dateRaw}</div>
+                        <div class="text-xs text-slate-500 font-medium mt-0.5 flex items-center">
+                            <i data-lucide="clock" class="w-3 h-3 mr-1"></i> ${row.time}
+                        </div>
+                    </td>
+                    <td class="p-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeClass}">
+                            ${row.mode || 'N/A'}
+                        </span>
+                    </td>
+                    <td class="p-4 text-slate-700 font-medium">
+                        ${row.phone ? row.phone : '<span class="text-slate-400 font-normal italic">Not provided</span>'}
+                    </td>
+                    <td class="p-4">
+                        <div class="flex items-center justify-end space-x-2">
+                            ${safePhone ? `
+                            <a href="tel:${safePhone}" title="Call Patient" class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm">
+                                <i data-lucide="phone" class="w-4 h-4"></i>
+                            </a>
+                            <a href="https://wa.me/${safePhone}?text=${ptMsg}" target="_blank" title="WhatsApp Patient" class="flex items-center justify-center w-8 h-8 rounded-full bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-all shadow-sm">
+                                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                            </a>
+                            ` : ''}
+                            <div class="w-px h-6 bg-slate-200 mx-1"></div> <!-- Divider -->
+                            <a href="https://wa.me/?text=${docMsg}" target="_blank" title="Forward to Doctor via WhatsApp" class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-700 hover:text-white transition-all shadow-sm">
+                                <i data-lucide="forward" class="w-4 h-4"></i>
+                            </a>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        // Attach event listeners to trigger live filtering
+        document.getElementById('searchInput').addEventListener('input', filterData);
+        document.getElementById('dateFilter').addEventListener('change', filterData);
+        document.getElementById('doctorFilter').addEventListener('change', filterData);
+
+        // Fetch data automatically upon loading
+        window.addEventListener('DOMContentLoaded', fetchData);
+    </script>
+</body>
+</html>

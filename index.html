@@ -2,236 +2,738 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Official Portal - Secure Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Avijit Homeopathy Pharma</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* Base Reset & Typography */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-
+        @import url('https://fonts.googleapis.com/css2?family=Clear+Sans:wght@300;400;500;700&display=swap');
+        
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: 'Clear Sans', 'Inter', sans-serif;
+            background-color: #f1f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background-color: #f1f4f6;
             min-height: 100vh;
-            /* Premium Light Gradient Background */
-            background: radial-gradient(circle at top right, #f8fafc, #f1f5f9, #e2e8f0);
-            color: #1f2937;
-        }
-
-        /* Glassmorphism Card Container */
-        .login-card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            border-radius: 24px;
-            padding: 48px 40px;
-            width: 100%;
-            max-width: 420px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
-            animation: fadeIn 0.6s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .login-header h2 {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: 8px;
-            color: #0f172a;
-        }
-
-        .welcome-text {
-            color: #2563eb;
-            font-weight: 600;
-            font-size: 15px;
-            margin-bottom: 8px;
-        }
-
-        .login-header p {
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        /* Input Groups with Floating Labels */
-        .input-group {
             position: relative;
-            margin-bottom: 32px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.15);
+            padding-bottom: 90px;
+            overflow-x: hidden;
         }
 
-        .input-group input {
-            width: 100%;
-            padding: 12px 0;
-            font-size: 16px;
-            color: #0f172a;
-            border: none;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.15);
-            outline: none;
-            background: transparent;
-            transition: border-color 0.3s ease;
-        }
+        .text-1mg-coral { color: #ff6f61; }
+        .bg-1mg-coral { background-color: #ff6f61; }
+        .border-1mg-coral { border-color: #ff6f61; }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .input-group label {
-            position: absolute;
-            top: 12px;
-            left: 0;
-            font-size: 16px;
-            color: #64748b;
-            pointer-events: none;
-            transition: 0.3s ease all;
-        }
+        .slide-transition { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
 
-        /* Float label up when focused or has value */
-        .input-group input:focus ~ label,
-        .input-group input:valid ~ label {
-            top: -20px;
-            font-size: 13px;
-            color: #2563eb;
-            font-weight: 600;
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translateY(20px) translateX(-50%); }
+            to { opacity: 1; transform: translateY(0) translateX(-50%); }
         }
-
-        .input-group input:focus {
-            border-bottom: 1px solid #2563eb;
+        .toast { animation: slideUpFade 0.3s ease-out forwards; }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(37, 211, 102, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
         }
-
-        /* Custom Error Message Box (No alerts) */
-        .error-message {
-            display: none;
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #ef4444;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 24px;
-            animation: shake 0.4s ease-in-out;
+        .animate-pulse-ring {
+            animation: pulse-ring 2s infinite;
         }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-            75% { transform: translateX(-5px); }
-        }
-
-        /* Premium Submit Button */
-        .submit-btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-            background: linear-gradient(135deg, #60a5fa, #3b82f6);
-        }
-
-        .submit-btn:active {
-            transform: translateY(0);
-        }
+        
+        /* Custom smooth shadows for cards */
+        .card-shadow { box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .card-shadow-hover:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
     </style>
 </head>
-<body>
+<body class="text-gray-800 relative">
 
-    <div class="login-card">
-        <div class="login-header">
-            <h2>Avijit Pharma</h2>
-            <div class="welcome-text">Welcome to the Official Portal</div>
-            <p>Please enter your details to sign in.</p>
+    <div class="app-container">
+        
+        <!-- HEADER -->
+        <header class="sticky top-0 z-40 bg-white shadow-sm px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <button id="menu-btn" onclick="toggleMenu()" class="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                    <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
+                </button>
+                <div class="flex items-center gap-2" onclick="resetHomeView()">
+                    <img src="https://i.postimg.cc/DymFnNFP/IMG-20260227-WA0003.jpg" alt="Logo" class="h-8 w-auto object-contain rounded cursor-pointer shadow-sm">
+                    <div class="flex flex-col justify-center cursor-pointer">
+                        <span class="font-bold text-gray-800 text-[16px] tracking-tight leading-tight">Avijit Homeopathy</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="toggleCart()" class="relative p-1.5 hover:bg-gray-100 rounded-full transition-colors group">
+                    <i data-lucide="shopping-cart" class="w-6 h-6 text-gray-700 group-hover:text-1mg-coral transition-colors"></i>
+                    <span id="cart-badge" class="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-orange-500 text-white text-[9px] font-bold h-4 w-4 flex items-center justify-center rounded-full shadow-md hidden">0</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- SEARCH BAR -->
+        <div class="bg-white px-4 py-3 border-b border-gray-100 shadow-sm relative z-30">
+            <div class="flex items-center bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 focus-within:ring-2 focus-within:ring-orange-100 focus-within:border-orange-300 transition-all shadow-inner">
+                <i data-lucide="search" class="w-4 h-4 text-gray-400 mr-2"></i>
+                <input type="text" id="search-input" oninput="handleSearch(event)" placeholder="Search for medicines, lab tests..." class="bg-transparent border-none outline-none w-full text-sm text-gray-700 placeholder-gray-400 font-medium">
+                <button id="clear-search" onclick="resetHomeView()" class="hidden text-gray-400 hover:text-gray-600 ml-2 bg-gray-200 rounded-full p-0.5"><i data-lucide="x" class="w-3 h-3"></i></button>
+            </div>
         </div>
 
-        <!-- Error box hidden by default -->
-        <div id="errorMessage" class="error-message"></div>
+        <!-- SIDE MENU -->
+        <div id="side-menu" class="fixed inset-0 z-50 hidden">
+            <div class="modal-overlay absolute inset-0" onclick="toggleMenu()"></div>
+            <div class="absolute top-0 left-0 bottom-0 w-[280px] bg-white shadow-2xl transform transition-transform -translate-x-full duration-300 rounded-r-2xl" id="side-menu-content">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-orange-50 to-white rounded-tr-2xl">
+                    <div class="flex items-center gap-3">
+                        <img src="https://i.postimg.cc/DymFnNFP/IMG-20260227-WA0003.jpg" alt="Logo" class="h-10 rounded shadow-sm border border-white">
+                        <span class="font-bold text-gray-800 text-base">Avijit Homeopathy</span>
+                    </div>
+                    <button onclick="toggleMenu()" class="bg-white p-1.5 rounded-full shadow-sm text-gray-500 hover:text-gray-800"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <nav class="p-3 flex flex-col gap-1">
+                    <a href="#" onclick="resetHomeView(); toggleMenu(); return false;" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-orange-50 text-gray-700 transition-colors"><i data-lucide="home" class="w-5 h-5 text-gray-400"></i> <span class="font-medium text-sm">Home</span></a>
+                    <a href="lab.html" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-orange-50 text-gray-700 transition-colors"><i data-lucide="flask-conical" class="w-5 h-5 text-gray-400"></i> <span class="font-medium text-sm">Lab Test</span></a>
+                    <a href="consultant.html" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-orange-50 text-gray-700 transition-colors"><i data-lucide="stethoscope" class="w-5 h-5 text-gray-400"></i> <span class="font-medium text-sm">Consultancy</span></a>
+                    <a href="blog.html" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-orange-50 text-gray-700 transition-colors"><i data-lucide="file-text" class="w-5 h-5 text-gray-400"></i> <span class="font-medium text-sm">Blog</span></a>
+                    <a href="about.html" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-orange-50 text-gray-700 transition-colors"><i data-lucide="file-signature" class="w-5 h-5 text-gray-400"></i> <span class="font-medium text-sm">About us</span></a>
+                    
+                    <div class="mt-5 px-4 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Support</div>
+                    <!-- Help Desk Option -->
+                    <a href="https://wa.me/919836232423?text=Hi%2C%20I%20need%20help%20regarding%20medicines." target="_blank" class="flex items-center gap-4 p-3.5 rounded-xl bg-green-50 text-green-700 hover:bg-green-100 transition-colors border border-green-100">
+                        <i data-lucide="headset" class="w-5 h-5"></i> <span class="font-bold text-sm">Help Desk (WhatsApp)</span>
+                    </a>
 
-        <form id="loginForm">
-            <div class="input-group">
-                <!-- required attribute is necessary for the :valid CSS selector to work for the floating label -->
-                <input type="text" id="userid" required autocomplete="off">
-                <label for="userid">User ID</label>
+                    <div class="mt-5 px-4 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Legal</div>
+                    <a href="terms.html" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-gray-50 text-gray-600 text-sm transition-colors">Terms & Conditions</a>
+                    <a href="privacy.html" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-gray-50 text-gray-600 text-sm transition-colors">Privacy Policy</a>
+                </nav>
             </div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <main class="w-full">
             
-            <div class="input-group">
-                <input type="password" id="password" required>
-                <label for="password">Password</label>
+            <!-- Category Grid (Pharmacy, Lab, etc.) -->
+            <div id="top-nav-grid" class="px-4 py-6 grid grid-cols-4 gap-4 text-center bg-white mb-2 shadow-sm relative z-20">
+                <div class="flex flex-col items-center gap-2.5 cursor-pointer group" onclick="resetHomeView()">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-50 to-red-50 flex items-center justify-center text-orange-500 border border-orange-100 group-hover:shadow-md transition-all"><i data-lucide="pill" class="w-6 h-6"></i></div>
+                    <span class="text-[11px] font-semibold text-gray-700">Pharmacy</span>
+                </div>
+                <div class="flex flex-col items-center gap-2.5 cursor-pointer group" onclick="window.location.href='lab.html'">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center text-blue-500 border border-blue-100 group-hover:shadow-md transition-all"><i data-lucide="microscope" class="w-6 h-6"></i></div>
+                    <span class="text-[11px] font-semibold text-gray-700">Lab Tests</span>
+                </div>
+                <div class="flex flex-col items-center gap-2.5 cursor-pointer group" onclick="window.location.href='consultant.html'">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center text-green-600 border border-green-100 group-hover:shadow-md transition-all"><i data-lucide="stethoscope" class="w-6 h-6"></i></div>
+                    <span class="text-[11px] font-semibold text-gray-700">Consult</span>
+                </div>
+                <div class="flex flex-col items-center gap-2.5 cursor-pointer group" onclick="showCosmeticsOnly()">
+                    <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center text-purple-500 border border-purple-100 group-hover:shadow-md transition-all"><i data-lucide="sparkles" class="w-6 h-6"></i></div>
+                    <span class="text-[11px] font-semibold text-gray-700">Cosmetic</span>
+                </div>
             </div>
 
-            <button type="submit" class="submit-btn">Sign In</button>
-        </form>
+            <!-- Banner Slider -->
+            <div id="banner-section" class="relative w-full aspect-[21/9] bg-gray-100 overflow-hidden group mb-2 shadow-sm">
+                <div id="banner-track" class="flex w-full h-full slide-transition"></div>
+                <button onclick="prevBanner()" class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/95 p-1.5 rounded-full shadow-md text-gray-800 z-10 hover:scale-110 transition-transform backdrop-blur-sm"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                <button onclick="nextBanner()" class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/95 p-1.5 rounded-full shadow-md text-gray-800 z-10 hover:scale-110 transition-transform backdrop-blur-sm"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+            </div>
+
+            <!-- Prescription Banner -->
+            <div id="prescription-banner" class="px-4 py-4 bg-white mb-2 shadow-sm">
+                <div class="flex items-center justify-between border border-orange-200 rounded-2xl p-4 bg-gradient-to-r from-orange-50 to-red-50 cursor-pointer shadow-sm hover:shadow-md transition-shadow" onclick="sendPrescription()">
+                    <div class="flex items-center gap-3.5">
+                        <div class="bg-white p-2.5 rounded-xl shadow-sm border border-orange-100 text-1mg-coral"><i data-lucide="file-signature" class="w-6 h-6"></i></div>
+                        <div>
+                            <h3 class="font-bold text-gray-800 text-[15px]">Order with Prescription</h3>
+                            <p class="text-[12px] text-gray-500 font-medium">Upload via WhatsApp directly</p>
+                        </div>
+                    </div>
+                    <button class="bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-md active:scale-95 transition-transform tracking-wide">UPLOAD</button>
+                </div>
+            </div>
+
+            <!-- Top Recommended Section -->
+            <div id="top-recommended-section" class="py-5 bg-white mb-2 shadow-sm">
+                <div class="px-4 flex justify-between items-center mb-4">
+                    <h2 class="text-[17px] font-bold text-gray-800 tracking-tight">Recommended for you</h2>
+                </div>
+                <div id="top-recommended-container" class="flex overflow-x-auto hide-scrollbar gap-3 px-4 pb-4 pt-1">
+                    <!-- Loading Skeletons -->
+                    <div class="min-w-[160px] h-60 bg-gray-50 animate-pulse rounded-2xl border border-gray-100"></div>
+                    <div class="min-w-[160px] h-60 bg-gray-50 animate-pulse rounded-2xl border border-gray-100"></div>
+                </div>
+            </div>
+
+            <!-- Main Product Section (Category Filters & Grid) -->
+            <div id="main-product-section" class="py-6 bg-white min-h-[500px] shadow-sm rounded-t-xl">
+                <div class="px-4 flex justify-between items-center mb-5">
+                    <h2 id="main-section-title" class="text-[17px] font-bold text-gray-800 tracking-tight">Shop by Category</h2>
+                    <button id="reset-view-btn" onclick="resetHomeView()" class="hidden text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full hover:bg-gray-200 transition-colors flex items-center gap-1"><i data-lucide="arrow-left" class="w-3 h-3"></i> Back</button>
+                </div>
+                
+                <!-- Filter Pills -->
+                <div id="category-filter-pills" class="flex overflow-x-auto hide-scrollbar gap-2.5 px-4 mb-6 pb-2">
+                    <!-- Injected dynamically by JS -->
+                </div>
+
+                <!-- Filtered Products Grid (Card Layout instead of Flush layout) -->
+                <div id="product-grid" class="grid grid-cols-2 gap-3 px-4 pb-6">
+                     <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="bg-gray-50 text-gray-600 pt-10 pb-12 px-6 border-t border-gray-200 mt-2">
+                <img src="https://i.postimg.cc/DymFnNFP/IMG-20260227-WA0003.jpg" alt="Logo" class="h-10 w-auto mb-4 object-contain rounded border border-white shadow-sm">
+                <p class="text-sm mb-6 text-gray-500 font-medium leading-relaxed">Your trusted partner in premium homeopathic care, lab tests, and wellness.</p>
+                <div class="flex flex-col gap-3 text-sm font-semibold mb-8 text-gray-400">
+                    <p>&copy; 2026 Avijit Homeopathy Pharma. All rights reserved.</p>
+                </div>
+            </footer>
+        </main>
+
+        <!-- FLOATING ANIMATED HELP ASSISTANT (WHATSAPP) -->
+        <a href="https://wa.me/919836232423?text=Hi%2C%20I%20need%20help." target="_blank" class="fixed bottom-[95px] right-4 z-40 bg-[#25D366] text-white p-3.5 rounded-full shadow-[0_4px_15px_rgba(37,211,102,0.4)] animate-pulse-ring hover:scale-110 transition-transform flex items-center justify-center border-2 border-white">
+            <i data-lucide="message-circle" class="w-7 h-7 fill-current"></i>
+        </a>
+
+        <!-- BOTTOM NAV WITH FLOATING ROUND LOGO -->
+        <nav class="fixed bottom-0 w-full max-w-[480px] bg-white border-t border-gray-200 flex justify-between items-center z-40 shadow-[0_-5px_20px_rgba(0,0,0,0.06)] pb-3 pt-2 px-1">
+            <a href="#" onclick="resetHomeView(); return false;" class="flex flex-col items-center gap-1 text-1mg-coral w-1/5">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span class="text-[10px] font-bold">Home</span>
+            </a>
+            <a href="lab.html" class="flex flex-col items-center gap-1 text-gray-400 hover:text-1mg-coral transition-colors w-1/5">
+                <i data-lucide="flask-conical" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Lab Test</span>
+            </a>
+            
+            <!-- Floating Round Center Logo -->
+            <div class="w-1/5 flex justify-center items-center relative -top-6">
+                <div onclick="resetHomeView()" class="bg-white p-1 rounded-full shadow-[0_8px_20px_rgba(0,0,0,0.15)] border-4 border-white w-16 h-16 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform active:scale-95">
+                    <img src="https://i.postimg.cc/DymFnNFP/IMG-20260227-WA0003.jpg" alt="Logo" class="w-full h-full object-cover rounded-full">
+                </div>
+            </div>
+
+            <a href="consultant.html" class="flex flex-col items-center gap-1 text-gray-400 hover:text-1mg-coral transition-colors w-1/5">
+                <i data-lucide="stethoscope" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Consult</span>
+            </a>
+            <a href="blog.html" class="flex flex-col items-center gap-1 text-gray-400 hover:text-1mg-coral transition-colors w-1/5">
+                <i data-lucide="file-text" class="w-5 h-5"></i>
+                <span class="text-[10px] font-medium">Blog</span>
+            </a>
+        </nav>
+
+        <!-- CART MODAL -->
+        <div id="cart-modal" class="fixed inset-0 z-50 hidden">
+            <div class="modal-overlay absolute inset-0" onclick="toggleCart()"></div>
+            <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col transform translate-y-full transition-transform duration-300" id="cart-content">
+                <div class="p-5 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-3xl">
+                    <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2"><i data-lucide="shopping-bag" class="w-5 h-5 text-orange-500"></i> Order Summary</h2>
+                    <button onclick="toggleCart()" class="p-1.5 hover:bg-gray-100 rounded-full"><i data-lucide="x" class="w-6 h-6 text-gray-500"></i></button>
+                </div>
+                <div id="cart-items" class="p-5 overflow-y-auto flex-1 flex flex-col gap-4 min-h-[150px] bg-[#f1f4f6]"></div>
+                <div class="p-5 border-t border-gray-100 bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-gray-500 font-medium">Amount to Pay</span>
+                        <span id="cart-total" class="font-bold text-2xl text-gray-900">₹0</span>
+                    </div>
+                    <button onclick="proceedToBuy()" class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all text-[15px] tracking-wide">PROCEED TO SECURE CHECKOUT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHECKOUT MODAL (STEP-BY-STEP) -->
+        <div id="checkout-modal" class="fixed inset-0 z-50 hidden">
+            <div class="modal-overlay absolute inset-0"></div>
+            <div class="absolute inset-0 bg-[#f1f4f6] flex flex-col overflow-y-auto">
+                <div class="sticky top-0 bg-white p-4 border-b border-gray-100 flex items-center gap-3 z-10 shadow-sm">
+                    <button onclick="handleCheckoutBack()" class="p-1 hover:bg-gray-100 rounded-full transition-colors"><i data-lucide="arrow-left" class="w-6 h-6 text-gray-700"></i></button>
+                    <h2 id="checkout-header-title" class="text-base font-bold text-gray-800">Choose Delivery Option</h2>
+                </div>
+                <div class="p-5 flex-1 pb-28">
+                    <div id="step-selection" class="flex flex-col gap-4 mt-2">
+                        <button onclick="showCheckoutStep('pickup')" class="bg-white border-2 border-transparent hover:border-orange-200 rounded-2xl p-6 shadow-sm flex flex-col items-center text-center gap-3 transition-all">
+                            <div class="bg-orange-50 p-4 rounded-full text-orange-500 mb-1"><i data-lucide="store" class="w-8 h-8"></i></div>
+                            <span class="font-bold text-lg text-gray-800">Pick from Store</span>
+                            <span class="text-sm text-gray-500">Collect directly from our physical shop</span>
+                        </button>
+                        <button onclick="showCheckoutStep('home')" class="bg-white border-2 border-transparent hover:border-orange-200 rounded-2xl p-6 shadow-sm flex flex-col items-center text-center gap-3 transition-all">
+                            <div class="bg-blue-50 p-4 rounded-full text-blue-500 mb-1"><i data-lucide="truck" class="w-8 h-8"></i></div>
+                            <span class="font-bold text-lg text-gray-800">Home Delivery</span>
+                            <span class="text-sm text-gray-500">Get it delivered to your doorstep</span>
+                        </button>
+                    </div>
+                    <!-- Pickup Form -->
+                    <div id="step-form-pickup" class="hidden bg-white p-6 rounded-2xl shadow-sm flex flex-col gap-4">
+                        <h3 class="font-bold text-gray-800 text-sm border-b border-gray-100 pb-3 mb-2 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4 text-orange-500"></i> Patient Details</h3>
+                        <input type="text" id="p-name" placeholder="Patient Full Name*" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors">
+                        <input type="tel" id="p-phone" placeholder="Mobile Number*" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors">
+                        <textarea id="p-address" placeholder="Residential Address*" rows="3" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors"></textarea>
+                    </div>
+                    <!-- Home Delivery Form -->
+                    <div id="step-form-home" class="hidden bg-white p-6 rounded-2xl shadow-sm flex flex-col gap-4">
+                        <h3 class="font-bold text-gray-800 text-sm border-b border-gray-100 pb-3 mb-2 flex items-center gap-2"><i data-lucide="map-pin" class="w-4 h-4 text-blue-500"></i> Delivery Address</h3>
+                        <input type="text" id="h-name" placeholder="Full Name*" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors">
+                        <input type="tel" id="h-phone" placeholder="Mobile Number*" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors">
+                        <input type="email" id="h-email" placeholder="Email ID (Optional)" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors">
+                        <textarea id="h-address" placeholder="Full Delivery Address (House No, Street)*" rows="3" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors"></textarea>
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="text" id="h-pin" placeholder="PIN Code*" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors">
+                            <input type="text" id="h-state" placeholder="State*" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors">
+                        </div>
+                        <input type="text" id="h-country" value="India" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors">
+                        <input type="text" id="h-landmark" placeholder="Nearby Landmark (Optional)" class="w-full border border-gray-200 bg-gray-50 rounded-xl p-3.5 text-sm focus:border-orange-400 focus:bg-white outline-none transition-colors">
+                    </div>
+                </div>
+                <div id="checkout-footer" class="hidden fixed bottom-0 w-full max-w-[480px] bg-white border-t border-gray-100 p-5 pb-6 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+                    <button onclick="submitOrder()" class="w-full bg-[#25D366] text-white font-bold py-4 rounded-xl text-[15px] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"><i data-lucide="message-circle" class="w-6 h-6 fill-current"></i> Confirm & Send via WhatsApp</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRODUCT DETAILS MODAL -->
+        <div id="details-modal" class="fixed inset-0 z-50 hidden flex items-end justify-center">
+            <div class="modal-overlay absolute inset-0" onclick="closeDetails()"></div>
+            <div class="bg-white w-full max-w-md rounded-t-3xl relative z-10 transform translate-y-full transition-transform duration-300 max-h-[92vh] flex flex-col shadow-2xl" id="details-content">
+                <div class="p-5 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white/90 backdrop-blur z-20 rounded-t-3xl">
+                    <h3 class="font-bold text-gray-800 text-sm tracking-wide">Product Details</h3>
+                    <button onclick="closeDetails()" class="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"><i data-lucide="x" class="w-5 h-5 text-gray-600"></i></button>
+                </div>
+                <div class="overflow-y-auto p-6 pb-12 flex-1">
+                    <div class="aspect-square bg-white flex items-center justify-center mb-6 p-6 border border-gray-100 rounded-2xl shadow-sm">
+                        <img id="d-img" src="" class="max-w-full max-h-full object-contain mix-blend-multiply">
+                    </div>
+                    <span id="d-cat" class="inline-block text-[10px] font-bold text-orange-600 uppercase tracking-widest bg-orange-50 px-3 py-1.5 rounded-full mb-1 border border-orange-100"></span>
+                    <h2 id="d-name" class="text-[22px] font-bold text-gray-800 mt-2 mb-2 leading-tight"></h2>
+                    <div class="text-[28px] font-bold text-gray-900 mb-6 flex items-end gap-2" id="d-price"></div>
+                    
+                    <div class="bg-gray-50 rounded-2xl p-5 border border-gray-100">
+                        <h4 class="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4 text-gray-500"></i> Description</h4>
+                        <p id="d-desc" class="text-sm text-gray-600 leading-relaxed"></p>
+                    </div>
+                </div>
+                <div class="p-5 border-t border-gray-100 bg-white sticky bottom-0 shadow-[0_-10px_20px_rgba(0,0,0,0.03)]">
+                    <button id="d-add-btn" class="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold py-4 rounded-xl shadow-lg text-[15px] active:scale-[0.98] transition-transform">ADD TO CART</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AD POPUP -->
+        <div id="ad-popup-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+            <div class="modal-overlay absolute inset-0 backdrop-blur-sm" onclick="closeAdPopUp()"></div>
+            <div id="ad-popup-content" class="relative z-10 w-full max-w-sm transform scale-95 transition-transform duration-300">
+                <button onclick="closeAdPopUp()" class="absolute -top-12 right-0 text-white bg-black/40 rounded-full p-2.5 hover:bg-black/60 transition-colors shadow-lg backdrop-blur-sm border border-white/20"><i data-lucide="x" class="w-6 h-6"></i></button>
+                <img id="ad-popup-img" src="" class="w-full rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-4 border-white/10">
+            </div>
+        </div>
+
+        <!-- TOASTS -->
+        <div id="toast-container" class="fixed bottom-28 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-max max-w-[90%] pointer-events-none"></div>
+
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            // 1. AUTO-REDIRECT CHECK ON LOAD
-            // We use sessionStorage here to mimic localStorage for the sandbox environment.
-            // If the user has already successfully logged in, redirect them immediately.
-            if (sessionStorage.getItem("isLoggedIn") === "true") {
-                // Redirecting to home.html
-                window.location.href = "home.html";
-                return; // Stop further execution
+        lucide.createIcons();
+
+        const WHATSAPP_NUMBER = "919836232423";
+        const SHEET_1_AD = "1664WhciB9I_kROpLZePJ707F1TjwMLsuJr1eDsne460";
+        const SHEET_2_BANNERS = "1uSyygbhUBd_1zkqUsTLLq-krYStCmevWdi8DIvmg5MM";
+        const SHEET_3_PRODUCTS = "1atvxvuFJAcDiF_6kXx1kfX2fSfd4o68sMruit_DQbJY";
+
+        const CATEGORIES = [
+            "All", "Dilution", "Globules (Pills)", "Tablets", "Mother Tincture", 
+            "Ointment / Cream", "Powder", "Biochemic (Tissue) Salts", "Cosmetic"
+        ];
+
+        let allProducts = [];
+        let cart = [];
+        let currentBannerIndex = 0;
+        let bannerInterval;
+        let deliveryMethod = 'pickup';
+
+        // Custom Search Function
+        function handleSearch(event) {
+            const query = event.target.value.toLowerCase().trim();
+            const grid = document.getElementById('product-grid');
+            const mainTitle = document.getElementById('main-section-title');
+            const clearBtn = document.getElementById('clear-search');
+            
+            if (!query) {
+                resetHomeView();
+                return;
             }
 
-            const loginForm = document.getElementById("loginForm");
-            const errorMessage = document.getElementById("errorMessage");
+            clearBtn.classList.remove('hidden');
 
-            // 2. HANDLE FORM SUBMISSION
-            loginForm.addEventListener("submit", (e) => {
-                // Prevent the default form submission (which reloads the page)
-                e.preventDefault();
+            // Hide other UI sections to focus strictly on search results
+            document.getElementById('banner-section').classList.add('hidden');
+            document.getElementById('prescription-banner').classList.add('hidden');
+            document.getElementById('top-recommended-section').classList.add('hidden');
+            document.getElementById('category-filter-pills').classList.add('hidden');
+            document.getElementById('reset-view-btn').classList.remove('hidden');
 
-                // Get the inputted values
-                const userIdInput = document.getElementById("userid").value;
-                const passwordInput = document.getElementById("password").value;
+            mainTitle.innerText = `Search Results for "${query}"`;
 
-                // 3. CHECK CREDENTIALS
-                // Note: Hardcoding credentials in frontend code is for prototyping/UI mockups only. 
-                // In a real application, authentication must happen on a secure backend server.
-                if (userIdInput === "Avijit2026" && passwordInput === "gouranga2006") {
-                    
-                    // Hide any previous errors
-                    errorMessage.style.display = "none";
+            // Filter logic (by name or category)
+            const filtered = allProducts.filter(p => 
+                p.name.toLowerCase().includes(query) || 
+                p.category.toLowerCase().includes(query)
+            );
 
-                    // Save the login state so they don't have to log in again on refresh
-                    sessionStorage.setItem("isLoggedIn", "true");
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-2 py-20 text-center text-gray-500 text-sm w-full flex flex-col items-center bg-gray-50 rounded-2xl border border-dashed border-gray-200 mt-4"><i data-lucide="search-x" class="w-10 h-10 text-gray-300 mb-3"></i><span class="font-medium text-gray-600">No medicines found</span><span class="text-xs mt-1 text-gray-400">Try adjusting your search terms</span></div>`;
+            } else {
+                grid.innerHTML = filtered.map(p => createProductCard(p, false)).join('');
+            }
+            lucide.createIcons();
+        }
 
-                    // Redirect to the homepage
-                    window.location.href = "home.html";
-                    
-                } else {
-                    // Show error message box with animation
-                    errorMessage.textContent = "Invalid User ID or Password.";
-                    errorMessage.style.display = "block";
-                    
-                    // Reset animation trick
-                    errorMessage.style.animation = 'none';
-                    errorMessage.offsetHeight; /* trigger reflow */
-                    errorMessage.style.animation = null; 
+        async function fetchSheetData(sheetId) {
+            let url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&gid=0&t=${Date.now()}`;
+            try {
+                const res = await fetch(url);
+                let text = await res.text();
+                text = text.replace(/\n/g, '').replace(/\r/g, '');
+                const regex = /google\.visualization\.Query\.setResponse\((.*)\);/;
+                const match = text.match(regex);
+                if (match && match[1]) {
+                    const data = JSON.parse(match[1]);
+                    return data.table.rows || [];
+                }
+            } catch (e) { console.error("Data fetch error:", e); }
+            return [];
+        }
+
+        const getVal = (row, idx) => (row.c && row.c[idx] && row.c[idx].v !== null && row.c[idx].v !== undefined) ? String(row.c[idx].v) : "";
+
+        async function init() {
+            loadAd();
+            loadBanners();
+            await loadProducts();
+            
+            // Build Category Filter Pills with new active gradient styling
+            const pillsContainer = document.getElementById('category-filter-pills');
+            pillsContainer.innerHTML = CATEGORIES.map(cat => {
+                const isActive = cat === 'All';
+                const baseClasses = "whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-sm";
+                const activeClasses = "cat-btn active bg-gradient-to-r from-orange-500 to-red-500 text-white border-transparent shadow-md";
+                const inactiveClasses = "cat-btn bg-white text-gray-600 border border-gray-200 hover:border-orange-300 hover:text-orange-600";
+                return `<button onclick="filterCategory('${cat}')" class="${baseClasses} ${isActive ? activeClasses : inactiveClasses}" data-cat="${cat}">${cat}</button>`;
+            }).join('');
+
+            const saved = sessionStorage.getItem('avijitCart');
+            if(saved) { cart = JSON.parse(saved); updateCartBadge(); }
+        }
+
+        async function loadAd() {
+            const rows = await fetchSheetData(SHEET_1_AD);
+            let img = "";
+            for (let i = 0; i < rows.length; i++) {
+                if(!rows[i] || !rows[i].c) continue;
+                for (let j = 0; j < rows[i].c.length; j++) {
+                    let val = getVal(rows[i], j);
+                    if (val && val.startsWith('http')) {
+                        img = val;
+                        break;
+                    }
+                }
+                if(img) break;
+            }
+            if(img) {
+                document.getElementById('ad-popup-img').src = img;
+                document.getElementById('ad-popup-modal').classList.remove('hidden');
+                setTimeout(() => document.getElementById('ad-popup-content').classList.add('scale-100'), 50);
+            }
+        }
+
+        function closeAdPopUp() {
+            document.getElementById('ad-popup-content').classList.remove('scale-100');
+            setTimeout(() => document.getElementById('ad-popup-modal').classList.add('hidden'), 300);
+        }
+
+        async function loadBanners() {
+            const rows = await fetchSheetData(SHEET_2_BANNERS);
+            const track = document.getElementById('banner-track');
+            let links = [];
+            rows.forEach(r => { 
+                if(!r || !r.c) return;
+                for(let i=0; i<r.c.length; i++) {
+                    let val = getVal(r, i);
+                    if(val && val.startsWith('http')) { links.push(val); break; }
                 }
             });
-        });
+            const top5 = links.slice(-5);
+            if(top5.length) {
+                track.innerHTML = top5.map(url => `<div class="w-full h-full flex-shrink-0"><img src="${url}" class="w-full h-full object-cover"></div>`).join('');
+                if(top5.length > 1) {
+                    if(bannerInterval) clearInterval(bannerInterval);
+                    bannerInterval = setInterval(() => {
+                        currentBannerIndex = (currentBannerIndex + 1) % track.children.length;
+                        track.style.transform = `translateX(-${currentBannerIndex * 100}%)`;
+                    }, 4000);
+                }
+            }
+        }
+
+        async function loadProducts() {
+            const rows = await fetchSheetData(SHEET_3_PRODUCTS);
+            allProducts = [];
+            
+            for (let i = 1; i < rows.length; i++) {
+                const r = rows[i];
+                if (!r || !r.c) continue;
+                
+                const stockVal = getVal(r, 7).trim();
+                const product = {
+                    id: `p_${i}`,
+                    image: getVal(r, 1),
+                    name: getVal(r, 2),
+                    type: getVal(r, 3),
+                    category: getVal(r, 4).trim(),
+                    description: getVal(r, 5),
+                    price: parseFloat(getVal(r, 6)) || 0,
+                    stock: (stockVal === '1' || stockVal.toLowerCase() === 'available') ? 1 : 2
+                };
+                
+                if(product.name && product.price > 0) {
+                    allProducts.push(product);
+                }
+            }
+            renderTopRecommended();
+            filterCategory('All');
+        }
+
+        function createProductCard(p, isHorizontal = false) {
+            const isOut = p.stock === 2;
+            // Upgraded UI for cards: rounded corners, drop shadows, completely distinct from flush grid.
+            const btnClass = isOut ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200" : "bg-white border border-orange-500 text-orange-600 font-bold hover:bg-orange-50 active:scale-95 shadow-sm";
+            const btnText = isOut ? "SOLD OUT" : "ADD";
+            const clickAdd = isOut ? "" : `onclick="addToCart('${p.id}'); event.stopPropagation();"`;
+            const wrapperClass = isHorizontal ? "min-w-[160px] max-w-[160px] flex-shrink-0" : "w-full";
+            const imgSrc = p.image && p.image.startsWith('http') ? p.image : 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23cbd5e1" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+            
+            return `
+                <div class="bg-white p-3.5 rounded-2xl relative flex flex-col h-full cursor-pointer group card-shadow card-shadow-hover transition-all border border-gray-100 ${wrapperClass}" onclick="openDetails('${p.id}')">
+                    <div class="aspect-square flex items-center justify-center p-2 mb-3 relative bg-gray-50 rounded-xl overflow-hidden border border-gray-100/50">
+                        <img src="${imgSrc}" class="max-w-full max-h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-110">
+                        ${isOut ? '<div class="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center"><span class="bg-gray-800 text-white text-[9px] font-black px-2 py-1 rounded shadow-md tracking-wider">SOLD OUT</span></div>' : ''}
+                    </div>
+                    <div class="flex-1 flex flex-col">
+                        <h3 class="text-[13px] font-bold text-gray-800 line-clamp-2 leading-snug h-9">${p.name}</h3>
+                        <div class="text-[10px] text-gray-400 mt-1 mb-0.5 truncate font-medium uppercase tracking-wider">${p.category}</div>
+                        
+                        <!-- Premium See Details Link with Arrow -->
+                        <span class="text-[11px] text-blue-600 font-semibold flex items-center gap-0.5 mt-0.5 mb-3 hover:opacity-80 transition-opacity" onclick="openDetails('${p.id}'); event.stopPropagation();">
+                            See details <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                        </span>
+                        
+                        <div class="mt-auto flex items-center justify-between pt-1 border-t border-gray-50">
+                            <span class="font-bold text-[15px] text-gray-900">₹${p.price.toFixed(2)}</span>
+                            <button ${clickAdd} class="px-5 py-2 rounded-lg text-[11px] transition-all ${btnClass}">${btnText}</button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function renderTopRecommended() {
+            const container = document.getElementById('top-recommended-container');
+            const top10 = allProducts.slice(0, 10);
+            if (top10.length === 0) { 
+                container.innerHTML = `<p class="text-sm text-gray-400 px-4">No recommended products found.</p>`; 
+                return; 
+            }
+            container.innerHTML = top10.map(p => createProductCard(p, true)).join('');
+            lucide.createIcons();
+        }
+
+        function filterCategory(catName) {
+            // Update pill styling for active/inactive gradients
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                if(btn.dataset.cat === catName) {
+                    btn.classList.add('bg-gradient-to-r', 'from-orange-500', 'to-red-500', 'text-white', 'border-transparent', 'shadow-md');
+                    btn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+                } else {
+                    btn.classList.remove('bg-gradient-to-r', 'from-orange-500', 'to-red-500', 'text-white', 'border-transparent', 'shadow-md');
+                    btn.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+                }
+            });
+
+            const grid = document.getElementById('product-grid');
+            let filtered = (catName === 'All') ? allProducts : allProducts.filter(p => p.category.toLowerCase().includes(catName.toLowerCase()));
+            
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-2 py-16 text-center text-gray-400 text-sm w-full bg-gray-50 rounded-2xl border border-dashed border-gray-200"><i data-lucide="package-open" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>No products found in this category.</div>`;
+            } else {
+                grid.innerHTML = filtered.map(p => createProductCard(p, false)).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function showCosmeticsOnly() {
+            resetHomeView(); // Reset UI state first
+            filterCategory('Cosmetic');
+            document.getElementById('main-product-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function resetHomeView() {
+            // Restore visual elements if they were hidden by search
+            document.getElementById('banner-section').classList.remove('hidden');
+            document.getElementById('prescription-banner').classList.remove('hidden');
+            document.getElementById('top-recommended-section').classList.remove('hidden');
+            document.getElementById('category-filter-pills').classList.remove('hidden');
+            document.getElementById('reset-view-btn').classList.add('hidden');
+            document.getElementById('main-section-title').innerText = "Shop by Category";
+            
+            // Clear Search Bar
+            document.getElementById('search-input').value = '';
+            document.getElementById('clear-search').classList.add('hidden');
+
+            filterCategory('All');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openDetails(id) {
+            const p = allProducts.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('d-img').src = p.image || 'data:image/svg+xml;utf8,<svg...';
+            document.getElementById('d-cat').innerText = p.category;
+            document.getElementById('d-name').innerText = p.name;
+            document.getElementById('d-price').innerText = `₹${p.price.toFixed(2)}`;
+            document.getElementById('d-desc').innerText = p.description || "Premium medicine formulated for effective care. Consult a physician for specific dosage.";
+            const btn = document.getElementById('d-add-btn');
+            btn.onclick = (p.stock === 2) ? null : () => { addToCart(p.id); closeDetails(); };
+            btn.innerText = (p.stock === 2) ? "SOLD OUT" : "ADD TO CART";
+            btn.className = (p.stock === 2) ? "w-full bg-gray-200 text-gray-500 py-4 rounded-xl font-bold cursor-not-allowed" : "w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-4 rounded-xl font-bold shadow-lg active:scale-95 transition-transform tracking-wide";
+            document.getElementById('details-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('details-content').classList.remove('translate-y-full'), 10);
+        }
+
+        function closeDetails() {
+            document.getElementById('details-content').classList.add('translate-y-full');
+            setTimeout(() => document.getElementById('details-modal').classList.add('hidden'), 300);
+        }
+
+        function addToCart(id) {
+            const p = allProducts.find(x => x.id === id);
+            if(!p || p.stock === 2) return;
+            const item = cart.find(i => i.id === id);
+            if(item) item.quantity++; else cart.push({...p, quantity: 1});
+            sessionStorage.setItem('avijitCart', JSON.stringify(cart));
+            updateCartBadge();
+            showToast(`${p.name} added to cart`);
+        }
+
+        function updateQuantity(id, change) {
+            const idx = cart.findIndex(i => i.id === id);
+            if(idx > -1) {
+                cart[idx].quantity += change;
+                if(cart[idx].quantity <= 0) cart.splice(idx, 1);
+                sessionStorage.setItem('avijitCart', JSON.stringify(cart));
+                updateCartBadge(); renderCartItems();
+            }
+        }
+
+        function updateCartBadge() {
+            const b = document.getElementById('cart-badge');
+            const total = cart.reduce((s, i) => s + i.quantity, 0);
+            b.innerText = total;
+            b.classList.toggle('hidden', total === 0);
+        }
+
+        function toggleCart() {
+            const m = document.getElementById('cart-modal'), c = document.getElementById('cart-content');
+            if(m.classList.contains('hidden')) { renderCartItems(); m.classList.remove('hidden'); setTimeout(() => c.classList.remove('translate-y-full'), 10); }
+            else { c.classList.add('translate-y-full'); setTimeout(() => m.classList.add('hidden'), 300); }
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cart-items');
+            if(!cart.length) { container.innerHTML = `<div class="py-16 text-center text-gray-400 flex flex-col items-center"><i data-lucide="shopping-bag" class="w-12 h-12 mb-3 text-gray-300"></i><span class="font-medium text-gray-500">Your bag is empty</span></div>`; document.getElementById('cart-total').innerText = "₹0"; lucide.createIcons(); return; }
+            let sum = 0;
+            container.innerHTML = cart.map(i => {
+                sum += (i.price * i.quantity);
+                return `<div class="flex gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                    <img src="${i.image}" class="w-16 h-16 object-contain border border-gray-100 rounded-xl bg-gray-50 p-1">
+                    <div class="flex-1 flex flex-col justify-between">
+                        <div class="flex justify-between items-start gap-2">
+                            <h4 class="text-[12px] font-bold text-gray-800 line-clamp-2 leading-snug">${i.name}</h4>
+                            <button onclick="updateQuantity('${i.id}', -${i.quantity})" class="p-1 hover:bg-red-50 rounded-full text-gray-400 hover:text-red-500 transition-colors"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="font-bold text-[15px] text-gray-900">₹${(i.price*i.quantity).toFixed(2)}</span>
+                            <div class="flex items-center gap-3 bg-gray-50 border border-gray-200 px-1 py-1 rounded-lg text-[12px] font-bold">
+                                <button onclick="updateQuantity('${i.id}', -1)" class="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-orange-500">-</button>
+                                <span class="w-4 text-center">${i.quantity}</span>
+                                <button onclick="updateQuantity('${i.id}', 1)" class="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-gray-600 hover:text-orange-500">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            document.getElementById('cart-total').innerText = `₹${sum.toFixed(2)}`;
+            lucide.createIcons();
+        }
+
+        function proceedToBuy() { toggleCart(); document.getElementById('checkout-modal').classList.remove('hidden'); showCheckoutStep('selection'); }
+        function handleCheckoutBack() { currentCheckoutStep === 'selection' ? document.getElementById('checkout-modal').classList.add('hidden') : showCheckoutStep('selection'); }
+        
+        function showCheckoutStep(s) {
+            currentCheckoutStep = s;
+            document.getElementById('step-selection').classList.toggle('hidden', s !== 'selection');
+            document.getElementById('step-form-pickup').classList.toggle('hidden', s !== 'pickup');
+            document.getElementById('step-form-home').classList.toggle('hidden', s !== 'home');
+            document.getElementById('checkout-footer').classList.toggle('hidden', s === 'selection');
+            document.getElementById('checkout-header-title').innerText = s === 'selection' ? "Choose Delivery Option" : "Enter Delivery Details";
+            deliveryMethod = s;
+        }
+
+        function submitOrder() {
+            let msg = `*🛒 New Order | Avijit Homeopathy Pharma*\n\n`;
+            if(deliveryMethod === 'home') {
+                const n = document.getElementById('h-name').value.trim(), p = document.getElementById('h-phone').value.trim(), a = document.getElementById('h-address').value.trim();
+                const pin = document.getElementById('h-pin').value.trim(), state = document.getElementById('h-state').value.trim();
+                if(!n || !p || !a || !pin || !state) { showToast("Please fill Name, Phone, Address, Pin & State", "error"); return; }
+                msg += `*🚚 Home Delivery*\nName: ${n}\nPhone: ${p}\nAddress: ${a}\nPIN: ${pin}, State: ${state}\n\n`;
+            } else {
+                const n = document.getElementById('p-name').value.trim(), p = document.getElementById('p-phone').value.trim(), a = document.getElementById('p-address').value.trim();
+                if(!n || !p || !a) { showToast("Please fill Patient Name, Phone, and Address", "error"); return; }
+                msg += `*🏪 Store Pickup*\nName: ${n}\nPhone: ${p}\nAddress: ${a}\n_Note: Ready this package for me, I will collect it by today before 10:00 p.m._\n\n`;
+            }
+            msg += `*Products Ordered:*\n`;
+            let total = 0;
+            cart.forEach((i, index) => { msg += `${index+1}. ${i.name} x${i.quantity} (₹${(i.price*i.quantity).toFixed(2)})\n`; total += (i.price*i.quantity); });
+            msg += `\n*🧾 Total Value: ₹${total.toFixed(2)}*`;
+            window.location.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+        }
+
+        function sendPrescription() { window.location.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent("Hi, I want to order medicines using my prescription.")}`; }
+        function showToast(m, type = 'success') { 
+            const container = document.getElementById('toast-container'); 
+            const t = document.createElement('div'); 
+            t.className = `toast ${type === 'error' ? 'bg-red-600' : 'bg-gray-800'} text-white px-5 py-3 rounded-xl shadow-[0_10px_20px_rgba(0,0,0,0.2)] text-xs font-bold flex items-center gap-2 border border-white/10`; 
+            t.innerHTML = `<i data-lucide="${type === 'error' ? 'alert-circle' : 'check-circle-2'}" class="w-4 h-4"></i> ${m}`;
+            container.appendChild(t); 
+            lucide.createIcons();
+            setTimeout(() => t.remove(), 3000); 
+        }
+        function toggleMenu() { const m = document.getElementById('side-menu'), c = document.getElementById('side-menu-content'); if(m.classList.contains('hidden')) { m.classList.remove('hidden'); setTimeout(() => c.classList.remove('-translate-x-full'), 10); } else { c.classList.add('-translate-x-full'); setTimeout(() => m.classList.add('hidden'), 300); } }
+
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>

@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avijit Pharma - Prescribe Viewer</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #0ea5e9;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Print Specific Styles */
+        @media screen {
+            .print-only {
+                display: none !important;
+            }
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                background-color: white !important;
+                margin: 0;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                min-height: 100vh;
+                padding: 20mm;
+                background: white;
+            }
+            
+            /* Professional Print Layout Details */
+            .print-header {
+                border-bottom: 2px solid #0ea5e9;
+                padding-bottom: 20px;
+                margin-bottom: 20px;
+            }
+            .print-rx-symbol {
+                font-size: 2.5rem;
+                font-weight: 700;
+                color: #0c4a6e;
+                margin-bottom: 10px;
+            }
+            .print-table th {
+                background-color: #f1f5f9 !important;
+                -webkit-print-color-adjust: exact;
+                color: #334155 !important;
+            }
+            .print-footer {
+                margin-top: 40px;
+                border-top: 1px solid #cbd5e1;
+                padding-top: 20px;
+            }
+        }
+
+        /* Dynamic Glow Animation for New Rows */
+        @keyframes tr-glow {
+            0% { background-color: #f0f9ff; box-shadow: inset 4px 0 0 #0ea5e9, inset 0 0 10px rgba(14,165,233,0.3); }
+            10% { background-color: #e0f2fe; box-shadow: inset 6px 0 0 #0ea5e9, inset 0 0 20px rgba(14,165,233,0.5); }
+            90% { background-color: #f0f9ff; box-shadow: inset 4px 0 0 #0ea5e9, inset 0 0 10px rgba(14,165,233,0.2); }
+            100% { background-color: transparent; box-shadow: inset 0 0 0 transparent; }
+        }
+        .row-glow {
+            animation: tr-glow 10s ease-out forwards;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased h-screen flex flex-col overflow-hidden">
+
+    <div class="no-print flex-1 flex flex-col h-full">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b border-slate-200 z-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <img src="https://i.postimg.cc/DymFnNFP/IMG-20260227-WA0003.jpg" alt="Avijit Pharma Logo" class="h-10 w-10 rounded-full object-cover shadow-sm border border-slate-100">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900 leading-tight">Avijit Pharma</h1>
+                        <p class="text-xs text-slate-500 font-medium tracking-wide uppercase">Prescription Dashboard & Viewer</p>
+                    </div>
+                </div>
+                <div id="sync-status" class="text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-full flex items-center gap-2 transition-colors duration-300">
+                    <i class="fa-solid fa-circle text-[10px] text-green-500 animate-pulse"></i> Live Sync Active
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-auto bg-slate-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                
+                <!-- Loading State -->
+                <div id="loading-state" class="flex flex-col items-center justify-center py-20">
+                    <div class="loader mb-4"></div>
+                    <p class="text-slate-500 font-medium">Fetching secure data from Google Workspace...</p>
+                </div>
+
+                <!-- Dashboard Content (Hidden initially) -->
+                <div id="dashboard-content" class="hidden space-y-6">
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Filters -->
+                        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+                            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4"><i class="fa-solid fa-filter mr-2 text-brand-500"></i> Filter Records</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Start Date</label>
+                                    <input type="date" id="filter-start-date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">End Date</label>
+                                    <input type="date" id="filter-end-date" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Doctor Referral</label>
+                                    <select id="filter-doctor" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 transition bg-white">
+                                        <option value="">All Doctors</option>
+                                        <!-- Populated via JS -->
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button id="btn-clear-filters" class="text-sm text-slate-500 hover:text-slate-800 font-medium px-3 py-1.5 rounded transition">Clear Filters</button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Stats -->
+                        <div class="bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl shadow-sm p-6 text-white flex flex-col justify-center relative overflow-hidden">
+                            <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4">
+                                <i class="fa-solid fa-chart-line text-8xl"></i>
+                            </div>
+                            <h2 class="text-brand-100 text-sm font-semibold uppercase tracking-wider mb-1 z-10">Filtered Revenue</h2>
+                            <div class="text-4xl font-bold mb-2 z-10">₹<span id="stat-revenue">0.00</span></div>
+                            <div class="text-sm text-brand-100 font-medium z-10"><span id="stat-count">0</span> prescriptions found</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-800">Prescription Records</h3>
+                            <div class="text-xs text-slate-500 font-medium">Showing top 100 recent matching records</div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 font-semibold border-b border-slate-200">
+                                        <th class="px-6 py-3">Date & Time</th>
+                                        <th class="px-6 py-3">Patient Name</th>
+                                        <th class="px-6 py-3">Doctor / Reg No</th>
+                                        <th class="px-6 py-3 text-right">Medicines Val (₹)</th>
+                                        <th class="px-6 py-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="divide-y divide-slate-100 text-sm">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="empty-state" class="hidden flex-col items-center justify-center py-12 text-slate-500">
+                            <i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-300"></i>
+                            <p>No records found matching your filters.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="gst-modal" class="no-print fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform scale-95 transition-transform duration-300 overflow-hidden" id="gst-modal-content">
+            <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800">Print Configuration</h3>
+                <button id="btn-close-modal" class="text-slate-400 hover:text-slate-600 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-slate-600 mb-4">Please enter the applicable GST percentage for this invoice generation. The system will calculate the final totals automatically.</p>
+                <div class="mb-5">
+                    <label class="block text-xs font-bold text-slate-700 mb-2">GST Percentage (%)</label>
+                    <div class="relative">
+                        <input type="number" id="gst-input" value="18" min="0" max="100" class="w-full border border-slate-300 rounded-lg pl-4 pr-10 py-3 text-lg font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition">
+                        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+                    </div>
+                </div>
+                
+                <div class="flex gap-3 mt-6">
+                    <button id="btn-cancel-print" class="flex-1 py-2.5 px-4 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition">Cancel</button>
+                    <button id="btn-confirm-print" class="flex-1 py-2.5 px-4 bg-brand-600 text-white font-medium rounded-lg hover:bg-brand-700 transition shadow-sm flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Submit & Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-area" class="print-only font-sans text-slate-800">
+        <!-- Print Header: Brand & Clinic Info -->
+        <div class="print-header flex justify-between items-start">
+            <div class="flex items-center gap-4">
+                <img src="https://i.postimg.cc/DymFnNFP/IMG-20260227-WA0003.jpg" alt="Logo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 1px solid #e2e8f0;">
+                <div>
+                    <h1 class="text-3xl font-extrabold text-brand-900 m-0 leading-tight tracking-tight">AVIJIT PHARMA</h1>
+                    <p class="text-brand-600 font-semibold tracking-widest text-xs uppercase mt-1">Healthcare & Wellness</p>
+                </div>
+            </div>
+            <div class="text-right text-sm text-slate-600 leading-relaxed">
+                <p class="font-bold text-slate-800">281, Netaji Subhas Road</p>
+                <p>Howrah – 711101, West Bengal, India</p>
+                <p><i class="fa-solid fa-phone mr-1"></i> +91 98362 32423</p>
+                <p><i class="fa-solid fa-globe mr-1"></i> www.avijitpharm.in</p>
+            </div>
+        </div>
+
+        <!-- Doctor & Patient Info Block -->
+        <div class="flex justify-between border border-slate-300 rounded-lg p-4 mb-6 bg-slate-50">
+            <!-- Doctor Details -->
+            <div class="w-1/2 pr-4 border-r border-slate-300">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Referring Physician</h3>
+                <p class="font-bold text-lg text-slate-800" id="print-doc-name">Dr. Name</p>
+                <p class="text-sm font-medium text-slate-600" id="print-doc-spec">Specialization</p>
+                <div class="mt-2 text-sm text-slate-600 grid grid-cols-2 gap-y-1">
+                    <p><span class="font-semibold">Reg No:</span> <span id="print-doc-reg">--</span></p>
+                    <p><span class="font-semibold">Phone:</span> <span id="print-doc-phone">--</span></p>
+                </div>
+            </div>
+            <!-- Patient Details -->
+            <div class="w-1/2 pl-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Patient Details</h3>
+                    <p class="text-xs font-semibold text-slate-600 bg-white px-2 py-1 rounded border border-slate-200">Date: <span id="print-date">--</span></p>
+                </div>
+                <p class="font-bold text-lg text-slate-800" id="print-pat-name">Patient Name</p>
+                <div class="mt-2 text-sm text-slate-600 grid grid-cols-2 gap-y-1">
+                    <p><span class="font-semibold">Age/Sex:</span> <span id="print-pat-age-sex">-- / --</span></p>
+                    <p><span class="font-semibold">Phone:</span> <span id="print-pat-phone">--</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medical Content: Case Study & Rx -->
+        <div class="flex gap-6 mb-8 min-h-[300px]">
+            <!-- Left Column: Case Study -->
+            <div class="w-1/3 border-r border-slate-200 pr-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3 border-b border-slate-200 pb-2">Clinical Notes / Case Study</h3>
+                <p id="print-case-study" class="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">No case notes provided.</p>
+            </div>
+            
+            <!-- Right Column: Medicines -->
+            <div class="w-2/3 pl-2">
+                <div class="print-rx-symbol">℞</div>
+                <table class="w-full text-left border-collapse print-table mt-2">
+                    <thead>
+                        <tr class="border-b-2 border-slate-300">
+                            <th class="py-2 px-2 text-xs font-bold uppercase tracking-wider">Sl.</th>
+                            <th class="py-2 px-2 text-xs font-bold uppercase tracking-wider">Medicine Name</th>
+                            <th class="py-2 px-2 text-xs font-bold uppercase tracking-wider text-right">Price (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="print-meds-body" class="divide-y divide-slate-200 text-sm">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Invoice / Totals Area -->
+        <div class="flex justify-end pt-4 border-t border-slate-300">
+            <div class="w-1/2 max-w-sm">
+                <div class="bg-slate-50 rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 border-b border-slate-200 pb-2">Invoice Summary</h3>
+                    
+                    <div class="flex justify-between items-center py-1 text-sm">
+                        <span class="text-slate-600 font-medium">Subtotal</span>
+                        <span class="text-slate-800 font-semibold" id="print-subtotal">₹ 0.00</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center py-1 text-sm border-b border-slate-200 pb-3 mb-2">
+                        <span class="text-slate-600 font-medium">GST (<span id="print-gst-percent">18</span>%)</span>
+                        <span class="text-slate-800 font-semibold" id="print-gst-amount">₹ 0.00</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center pt-1">
+                        <span class="text-lg font-bold text-brand-900">Total Amount</span>
+                        <span class="text-xl font-extrabold text-brand-900" id="print-total">₹ 0.00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / Signatures -->
+        <div class="print-footer flex justify-between items-end mt-12">
+            <div class="text-xs text-slate-500">
+                <p>System Generated Document.</p>
+                <p>Ref: <span id="print-ref-id">--</span></p>
+            </div>
+            <div class="text-center">
+                <div class="w-48 border-b-2 border-slate-800 mb-2"></div>
+                <p class="text-sm font-bold text-slate-800">Authorized Signatory</p>
+                <p class="text-xs text-slate-500">Avijit Pharma</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Google Sheets Gviz endpoints
+        // Sheet 1: Doctors (Cols: 0:?, 1:Name, 4:Phone, 6:RegNo, 7:Speciality)
+        const URL_DOCTORS = "https://docs.google.com/spreadsheets/d/1ePdRS6RRUBwS449OFLdrQWgKQu3n3H-02BjMZoWgmNU/gviz/tq?tqx=out:json";
+        // Sheet 2: Patients (Cols: 0:Timestamp, 1:DocRef, 2:Name, 3:Age, 4:Gender, 5:Phone, 6:Case, 7-26: Meds&Prices)
+        const URL_PATIENTS = "https://docs.google.com/spreadsheets/d/1XEhrz4rk-hJkuxzxcxNdMML9B2IxLFuwpKKd1OAdeTo/gviz/tq?tqx=out:json";
+
+        // Global State
+        let doctorsData = {}; // Keyed by Registration No (Referral Code)
+        let prescriptionsData = [];
+        let filteredData = [];
+        let itemToPrint = null;
+        let lastKnownTimestamp = parseInt(localStorage.getItem('avijit_last_timestamp')) || 0;
+        let isFirstLoad = true;
+
+        // DOM Elements
+        const loadingState = document.getElementById('loading-state');
+        const dashboardContent = document.getElementById('dashboard-content');
+        const tableBody = document.getElementById('table-body');
+        const emptyState = document.getElementById('empty-state');
+        
+        // Filters
+        const filterStartDate = document.getElementById('filter-start-date');
+        const filterEndDate = document.getElementById('filter-end-date');
+        const filterDoctor = document.getElementById('filter-doctor');
+        const btnClearFilters = document.getElementById('btn-clear-filters');
+
+        // Stats
+        const statRevenue = document.getElementById('stat-revenue');
+        const statCount = document.getElementById('stat-count');
+
+        // Modal
+        const gstModal = document.getElementById('gst-modal');
+        const gstModalContent = document.getElementById('gst-modal-content');
+        const btnCloseModal = document.getElementById('btn-close-modal');
+        const btnCancelPrint = document.getElementById('btn-cancel-print');
+        const btnConfirmPrint = document.getElementById('btn-confirm-print');
+        const gstInput = document.getElementById('gst-input');
+        const syncStatus = document.getElementById('sync-status');
+
+        async function fetchData(isSilent = false) {
+            try {
+                if (!isSilent) {
+                    loadingState.classList.remove('hidden');
+                    dashboardContent.classList.add('hidden');
+                } else {
+                    syncStatus.innerHTML = `<i class="fa-solid fa-arrows-rotate text-[10px] text-brand-500 animate-spin"></i> Syncing...`;
+                    syncStatus.classList.replace('bg-slate-100', 'bg-brand-50');
+                }
+
+                // Fetch both sheets concurrently
+                const [docRes, patRes] = await Promise.all([
+                    fetch(URL_DOCTORS),
+                    fetch(URL_PATIENTS)
+                ]);
+
+                const docText = await docRes.text();
+                const patText = await patRes.text();
+
+                // Clean Google's weird JSON wrapper
+                const docJson = JSON.parse(docText.substring(47).slice(0, -2));
+                const patJson = JSON.parse(patText.substring(47).slice(0, -2));
+
+                parseDoctors(docJson.table.rows);
+                parsePrescriptions(patJson.table.rows);
+
+                populateDoctorDropdown();
+                applyFilters(); // Initial/Update render
+
+                if (!isSilent) {
+                    loadingState.classList.add('hidden');
+                    dashboardContent.classList.remove('hidden');
+                }
+
+                syncStatus.innerHTML = `<i class="fa-solid fa-circle text-[10px] text-green-500 animate-pulse"></i> Live Sync Active`;
+                syncStatus.classList.replace('bg-brand-50', 'bg-slate-100');
+
+                isFirstLoad = false;
+            } catch (error) {
+                console.error("Error fetching data: ", error);
+                if (!isSilent) {
+                    loadingState.innerHTML = `<div class="text-red-500 bg-red-50 p-4 rounded-lg border border-red-200">
+                        <i class="fa-solid fa-triangle-exclamation mr-2"></i> Error loading data from Google Sheets. Ensure the links are public/viewable.
+                    </div>`;
+                } else {
+                    syncStatus.innerHTML = `<i class="fa-solid fa-circle text-[10px] text-red-500"></i> Sync Error`;
+                }
+            }
+        }
+
+        function parseDoctors(rows) {
+            rows.forEach(row => {
+                if(!row || !row.c) return;
+                const cols = row.c;
+                // Based on prompt: 7th tab (index 6) is Reg No, 2nd (index 1) is Name, 5th (index 4) is Phone, 8th (index 7) is Spec.
+                const regNo = cols[6] && cols[6].v ? String(cols[6].v).trim() : null;
+                if(regNo) {
+                    doctorsData[regNo] = {
+                        name: cols[1] && cols[1].v ? cols[1].v : 'N/A',
+                        phone: cols[4] && cols[4].v ? cols[4].v : 'N/A',
+                        speciality: cols[7] && cols[7].v ? cols[7].v : 'N/A',
+                        regNo: regNo
+                    };
+                }
+            });
+        }
+
+        function parsePrescriptions(rows) {
+            let newestCurrent = 0;
+
+            prescriptionsData = rows.map((row, index) => {
+                if(!row || !row.c) return null;
+                const c = row.c;
+                
+                // Parse Date (Column 0) accurately sorting by exact time
+                let dateObj = new Date();
+                let dateStrRaw = c[0] && c[0].f ? c[0].f : (c[0] && c[0].v ? c[0].v : '');
+                
+                if (typeof dateStrRaw === 'string' && dateStrRaw.startsWith('Date(')) {
+                    // Extract Date(Y, M, D, h, m, s)
+                    const parts = dateStrRaw.match(/Date\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+),\s*(\d+),\s*(\d+))?/);
+                    if(parts) {
+                        const y = parseInt(parts[1]);
+                        const m = parseInt(parts[2]);
+                        const d = parseInt(parts[3]);
+                        const hr = parts[4] ? parseInt(parts[4]) : 0;
+                        const min = parts[5] ? parseInt(parts[5]) : 0;
+                        const sec = parts[6] ? parseInt(parts[6]) : 0;
+                        dateObj = new Date(y, m, d, hr, min, sec);
+                    }
+                } else if (typeof dateStrRaw === 'string') {
+                    // Handle dd/mm/yyyy with optional HH:MM:SS
+                    const dmyMatch = dateStrRaw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+                    if (dmyMatch) {
+                        const hr = dmyMatch[4] ? parseInt(dmyMatch[4]) : 0;
+                        const min = dmyMatch[5] ? parseInt(dmyMatch[5]) : 0;
+                        const sec = dmyMatch[6] ? parseInt(dmyMatch[6]) : 0;
+                        dateObj = new Date(dmyMatch[3], dmyMatch[2] - 1, dmyMatch[1], hr, min, sec); 
+                    } else {
+                        dateObj = new Date(dateStrRaw);
+                    }
+                } else if (dateStrRaw) {
+                    dateObj = new Date(dateStrRaw);
+                }
+
+                // Check for newest entries
+                const ts = dateObj.getTime();
+                let isNew = false;
+                if (ts > newestCurrent) newestCurrent = ts;
+                if (lastKnownTimestamp !== 0 && ts > lastKnownTimestamp) {
+                    isNew = true;
+                }
+
+                // Format the output string strictly to dd/mm/yyyy
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const year = dateObj.getFullYear();
+                const formattedDateStr = `${day}/${month}/${year}`;
+
+                const docRef = c[1] && c[1].v ? String(c[1].v).trim() : 'UNKNOWN';
+                
+                // Extract Medicines (Col 7-8, 9-10... up to 25-26)
+                let medicines = [];
+                let totalValue = 0;
+                for(let i = 0; i < 10; i++) {
+                    let medNameCol = 7 + (i*2);
+                    let priceCol = 8 + (i*2);
+                    
+                    let mName = c[medNameCol] && c[medNameCol].v ? c[medNameCol].v : null;
+                    let mPrice = c[priceCol] && c[priceCol].v ? parseFloat(c[priceCol].v) : 0;
+                    
+                    if(mName) {
+                        medicines.push({ name: mName, price: mPrice });
+                        totalValue += mPrice;
+                    }
+                }
+
+                return {
+                    id: 'RX-' + Math.random().toString(36).substr(2, 6).toUpperCase() + '-' + index,
+                    date: dateObj,
+                    dateStr: formattedDateStr,
+                    isNew: isNew,
+                    docRef: docRef,
+                    patientName: c[2] && c[2].v ? c[2].v : 'Unknown',
+                    patientAge: c[3] && c[3].v ? c[3].v : '-',
+                    patientGender: c[4] && c[4].v ? c[4].v : '-',
+                    patientPhone: c[5] && c[5].v ? String(c[5].v) : '-',
+                    caseStudy: c[6] && c[6].v ? c[6].v : 'No notes recorded.',
+                    medicines: medicines,
+                    totalValue: totalValue,
+                    doctorDetails: doctorsData[docRef] || { name: 'Unknown Doctor', phone: 'N/A', speciality: 'N/A', regNo: docRef }
+                };
+            }).filter(item => item !== null && item.medicines.length > 0) // Filter out empty rows
+            
+            // Update last known timestamp locally
+            if (newestCurrent > lastKnownTimestamp) {
+                localStorage.setItem('avijit_last_timestamp', newestCurrent);
+                lastKnownTimestamp = newestCurrent;
+            }
+
+            // Remove the 'new' glow effect automatically after 10 seconds
+            const hasNew = prescriptionsData.some(p => p.isNew);
+            if(hasNew) {
+                setTimeout(() => {
+                    prescriptionsData.forEach(p => p.isNew = false);
+                    document.querySelectorAll('.row-glow').forEach(el => el.classList.remove('row-glow'));
+                }, 10000);
+            }
+
+            // Sort by date descending
+            prescriptionsData.sort((a, b) => b.date - a.date);
+        }
+
+        function populateDoctorDropdown() {
+            // Get unique doctor refs from prescriptions to ensure we only list relevant ones
+            const uniqueDocs = new Set(prescriptionsData.map(p => p.docRef));
+            
+            uniqueDocs.forEach(ref => {
+                const doc = doctorsData[ref];
+                const option = document.createElement('option');
+                option.value = ref;
+                option.textContent = doc ? `${doc.name} (${ref})` : `Unknown (${ref})`;
+                filterDoctor.appendChild(option);
+            });
+        }
+
+        function applyFilters() {
+            const startStr = filterStartDate.value;
+            const endStr = filterEndDate.value;
+            const docFilter = filterDoctor.value;
+
+            const startDate = startStr ? new Date(startStr) : null;
+            if(startDate) startDate.setHours(0,0,0,0);
+            
+            const endDate = endStr ? new Date(endStr) : null;
+            if(endDate) endDate.setHours(23,59,59,999);
+
+            filteredData = prescriptionsData.filter(item => {
+                let match = true;
+                
+                if (startDate && item.date < startDate) match = false;
+                if (endDate && item.date > endDate) match = false;
+                if (docFilter && item.docRef !== docFilter) match = false;
+
+                return match;
+            });
+
+            renderTable();
+            updateStats();
+        }
+
+        function renderTable() {
+            tableBody.innerHTML = '';
+            
+            if(filteredData.length === 0) {
+                tableBody.parentElement.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            tableBody.parentElement.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            filteredData.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-slate-50 transition border-b border-slate-100 last:border-0 ${item.isNew ? 'row-glow' : ''}`;
+                
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-slate-600">
+                        <div class="font-medium">${item.dateStr}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800">${item.patientName}</div>
+                        <div class="text-xs text-slate-500">${item.patientAge} yrs • ${item.patientGender}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-brand-700">${item.doctorDetails.name}</div>
+                        <div class="text-xs text-slate-500">Ref: ${item.docRef}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right font-bold text-slate-800">
+                        ₹${item.totalValue.toFixed(2)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        <button onclick="triggerPrintModal('${item.id}')" class="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-brand-600 px-3 py-1.5 rounded shadow-sm transition font-medium text-xs flex items-center gap-1 mx-auto">
+                            <i class="fa-solid fa-print"></i> Print
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function updateStats() {
+            const total = filteredData.reduce((sum, item) => sum + item.totalValue, 0);
+            statRevenue.textContent = total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            statCount.textContent = filteredData.length;
+        }
+
+        filterStartDate.addEventListener('change', applyFilters);
+        filterEndDate.addEventListener('change', applyFilters);
+        filterDoctor.addEventListener('change', applyFilters);
+        
+        btnClearFilters.addEventListener('click', () => {
+            filterStartDate.value = '';
+            filterEndDate.value = '';
+            filterDoctor.value = '';
+            applyFilters();
+        });
+
+        function triggerPrintModal(id) {
+            itemToPrint = filteredData.find(item => item.id === id);
+            if(!itemToPrint) return;
+
+            // Show Modal
+            gstModal.classList.remove('hidden');
+            // Trigger reflow to apply transition
+            void gstModal.offsetWidth;
+            gstModal.classList.remove('opacity-0');
+            gstModalContent.classList.remove('scale-95');
+        }
+
+        function closeGstModal() {
+            gstModal.classList.add('opacity-0');
+            gstModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                gstModal.classList.add('hidden');
+                itemToPrint = null;
+            }, 300); // matches duration-300
+        }
+
+        btnCloseModal.addEventListener('click', closeGstModal);
+        btnCancelPrint.addEventListener('click', closeGstModal);
+
+        btnConfirmPrint.addEventListener('click', () => {
+            if(!itemToPrint) return;
+
+            const gstPercent = parseFloat(gstInput.value) || 0;
+            preparePrintDOM(itemToPrint, gstPercent);
+            
+            // Wait slightly for DOM updates
+            setTimeout(() => {
+                window.print();
+                closeGstModal();
+            }, 100);
+        });
+
+        function preparePrintDOM(data, gstPercent) {
+            // Populate Doctor
+            document.getElementById('print-doc-name').textContent = data.doctorDetails.name;
+            document.getElementById('print-doc-spec').textContent = data.doctorDetails.speciality;
+            document.getElementById('print-doc-reg').textContent = data.doctorDetails.regNo;
+            document.getElementById('print-doc-phone').textContent = data.doctorDetails.phone;
+
+            // Populate Patient
+            document.getElementById('print-date').textContent = data.dateStr;
+            document.getElementById('print-pat-name').textContent = data.patientName;
+            document.getElementById('print-pat-age-sex').textContent = `${data.patientAge} / ${data.patientGender}`;
+            document.getElementById('print-pat-phone').textContent = data.patientPhone;
+            document.getElementById('print-ref-id').textContent = data.id;
+
+            // Populate Case Study
+            document.getElementById('print-case-study').textContent = data.caseStudy;
+
+            // Populate Medicines
+            const tbody = document.getElementById('print-meds-body');
+            tbody.innerHTML = '';
+            data.medicines.forEach((med, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="py-2 px-2 text-slate-600">${idx + 1}.</td>
+                    <td class="py-2 px-2 font-bold text-slate-800">${med.name}</td>
+                    <td class="py-2 px-2 text-right font-medium text-slate-700">${med.price.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Calculations
+            const subtotal = data.totalValue;
+            const gstAmount = subtotal * (gstPercent / 100);
+            const total = subtotal + gstAmount;
+
+            document.getElementById('print-subtotal').textContent = `₹ ${subtotal.toFixed(2)}`;
+            document.getElementById('print-gst-percent').textContent = gstPercent;
+            document.getElementById('print-gst-amount').textContent = `₹ ${gstAmount.toFixed(2)}`;
+            document.getElementById('print-total').textContent = `₹ ${total.toFixed(2)}`;
+        }
+
+        // Boot
+        window.onload = () => {
+            fetchData(false);
+            // Polling interval: Auto fetch data every 15 seconds in background
+            setInterval(() => fetchData(true), 15000);
+        };
+
+    </script>
+</body>
+</html>

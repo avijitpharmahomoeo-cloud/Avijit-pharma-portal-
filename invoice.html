@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avijit Pharma - Invoice Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Softer slate background */
+            color: #334155;
+        }
+
+        /* Highlight Animation for newly added items */
+        @keyframes highlightGlow {
+            0% { background-color: #ecfdf5; box-shadow: inset 0 0 20px rgba(16, 185, 129, 0.4); border-bottom-color: transparent; }
+            10% { background-color: #ecfdf5; box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.2); border-bottom-color: transparent; }
+            80% { background-color: #f0fdf4; box-shadow: inset 0 0 5px rgba(16, 185, 129, 0.05); }
+            100% { background-color: transparent; box-shadow: none; }
+        }
+        
+        .recent-item td {
+            animation: highlightGlow 10s ease-out forwards;
+        }
+
+        /* Modal Animations */
+        .modal-enter { opacity: 0; transform: scale(0.95); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 200ms, transform 200ms; }
+        .modal-exit { opacity: 1; transform: scale(1); }
+        .modal-exit-active { opacity: 0; transform: scale(0.95); transition: opacity 200ms, transform 200ms; }
+
+        /* Toast Notifications */
+        .toast {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            transform: translateY(-20px);
+            opacity: 0;
+            z-index: 9999;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                background-color: #ffffff;
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            
+            #print-container {
+                padding: 40px;
+                width: 100%;
+                max-width: 210mm;
+                margin: 0 auto;
+                box-sizing: border-box;
+            }
+
+            .invoice-table th {
+                background-color: #f3f4f6 !important;
+                color: #374151 !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+        
+        @media screen {
+            .print-only {
+                display: none !important;
+            }
+            
+            /* Enhanced Input Focus Ring */
+            input:focus, select:focus {
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+                border-color: #6366f1;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <div id="toastContainer" class="fixed top-4 right-4 flex flex-col gap-2 z-[100]"></div>
+
+    <div class="no-print flex flex-col min-h-screen">
+        
+        <!-- App Header -->
+        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                <!-- Brand -->
+                <div class="flex items-center gap-3">
+                    <img src="https://i.postimg.cc/DymFnNFP/IMG-20260227-WA0003.jpg" alt="Logo" class="h-10 w-10 rounded-full object-cover border border-slate-200 shadow-sm">
+                    <div>
+                        <h1 class="text-lg font-bold text-slate-800 leading-tight">Avijit Pharma</h1>
+                        <p class="text-xs text-slate-500 font-medium">Invoice Generator</p>
+                    </div>
+                </div>
+
+                <!-- Central Status Badge -->
+                <div id="statusBadge" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-600 transition-colors">
+                    <div id="statusDot" class="w-2 h-2 rounded-full bg-slate-400"></div>
+                    <span id="statusText">Initializing...</span>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-2">
+                    <button onclick="openHistoryModal()" class="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        History
+                    </button>
+                    <button onclick="openSettingsModal()" class="p-2 text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 rounded-xl transition-all active:scale-95" title="Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-grow max-w-7xl mx-auto px-4 py-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Column: Input Form (4 cols wide) -->
+            <div class="lg:col-span-4 space-y-6 sticky top-24">
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-indigo-100 text-indigo-600 p-2 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <h2 class="text-lg font-bold text-slate-800">Add Item</h2>
+                    </div>
+                    
+                    <div class="space-y-5">
+                        <!-- Date Picker -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1.5">Select Date</label>
+                            <div class="relative">
+                                <input type="date" id="inputDate" tabindex="1" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 transition-all cursor-pointer disabled:opacity-50" disabled>
+                            </div>
+                        </div>
+
+                        <!-- Dashboard / Medicine List -->
+                        <div>
+                            <div class="flex justify-between items-end mb-2">
+                                <label class="block text-sm font-semibold text-slate-700">Available Medicines</label>
+                                <span class="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">Qty & Price Locked</span>
+                            </div>
+                            <div id="medicineList" class="flex flex-col gap-2 max-h-[420px] overflow-y-auto pr-1">
+                                <div class="text-center p-6 text-slate-500 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                                    Loading...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-[calc(100vh-140px)] min-h-[500px]">
+                
+                <div class="p-5 border-b border-slate-200 bg-white flex justify-between items-center z-10">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Current Invoice</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Draft items will auto-save</p>
+                    </div>
+                    <span id="cartCount" class="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full border border-indigo-100">0 items</span>
+                </div>
+                
+                <!-- Table Area -->
+                <div class="flex-grow overflow-auto bg-slate-50 relative">
+                    <table class="w-full text-sm text-left text-slate-600">
+                        <thead class="text-xs text-slate-500 uppercase bg-white sticky top-0 shadow-sm z-10">
+                            <tr>
+                                <th scope="col" class="px-6 py-4 font-semibold">Medicine Description</th>
+                                <th scope="col" class="px-6 py-4 font-semibold text-center w-24">Qty</th>
+                                <th scope="col" class="px-6 py-4 font-semibold text-right w-28">Rate (₹)</th>
+                                <th scope="col" class="px-6 py-4 font-semibold text-right w-32">Total (₹)</th>
+                                <th scope="col" class="px-4 py-4 text-center w-16"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartTableBody" class="divide-y divide-slate-200 bg-white">
+                            <!-- Empty State Rendered by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer / Totals Area -->
+                <div class="p-5 border-t border-slate-200 bg-white z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div class="text-center sm:text-left w-full sm:w-auto">
+                            <p class="text-sm text-slate-500 font-medium mb-1">Total Amount</p>
+                            <p class="text-3xl font-black text-slate-800 tracking-tight">₹<span id="cartSubtotal">0.00</span></p>
+                        </div>
+                        <button onclick="openInvoiceModal()" id="createInvoiceBtn" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 px-8 rounded-xl shadow-md shadow-emerald-500/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                            Finalize & Print
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm no-print">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 opacity-0 transition-all duration-200" id="settingsContent">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    System Configuration
+                </h3>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-full p-1.5 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Advertisement -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">Advertisement Banner</label>
+                    <p class="text-xs text-slate-500 mb-3">Provide a direct image URL. It will print at the bottom of the invoice.</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="adBannerUrl" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:border-indigo-500 text-sm" placeholder="https://...">
+                        <button onclick="saveAdBanner()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition-colors whitespace-nowrap">Save Ad</button>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 flex justify-end">
+                <button onclick="closeSettingsModal()" class="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-xl text-sm font-semibold transition-all">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="invoiceModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm no-print">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform scale-95 opacity-0 transition-all duration-200" id="invoiceContent">
+            <div class="bg-emerald-600 px-6 py-4 flex justify-between items-center text-white">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    Finalize Details
+                </h3>
+                <button onclick="closeInvoiceModal()" class="text-emerald-100 hover:text-white hover:bg-emerald-700 p-1 rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="bg-emerald-50 text-emerald-800 text-xs font-medium px-3 py-2 rounded-lg border border-emerald-100 mb-4 flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Patient details are completely optional. Leave blank if not required.
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">Patient Name</label>
+                    <input type="text" id="patientName" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:border-emerald-500 transition-colors" placeholder="e.g. John Doe">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">Age</label>
+                        <input type="number" id="patientAge" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:border-emerald-500 transition-colors" placeholder="Years">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">Gender</label>
+                        <select id="patientGender" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:border-emerald-500 transition-colors appearance-none">
+                            <option value="">Select...</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">Phone Number</label>
+                    <input type="text" id="patientPhone" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:border-emerald-500 transition-colors" placeholder="+91 ...">
+                </div>
+
+                <div class="border-t border-slate-200 pt-5 mt-3">
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">GST % (Optional)</label>
+                    <div class="relative">
+                        <input type="number" id="gstRate" min="0" value="0" class="w-full pl-4 pr-8 py-2.5 bg-slate-50 border border-slate-300 rounded-xl focus:border-emerald-500 transition-colors font-medium">
+                        <span class="absolute right-4 top-2.5 text-slate-500 font-bold">%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button onclick="closeInvoiceModal()" class="px-6 py-2.5 text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100 rounded-xl transition-all">Cancel</button>
+                <button onclick="generateAndPrint()" class="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-emerald-500/20 transition-all flex items-center gap-2 active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    Save & Print
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="historyModal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm no-print">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh] transform scale-95 opacity-0 transition-all duration-200" id="historyContent">
+            <div class="bg-slate-800 px-6 py-4 flex justify-between items-center text-white shrink-0">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Invoice History Archive
+                </h3>
+                <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-white hover:bg-slate-700 p-1 rounded-full transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <div class="p-5 bg-slate-50 border-b border-slate-200 shrink-0">
+                <div class="relative max-w-md mx-auto">
+                    <span class="absolute left-4 top-3 text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </span>
+                    <input type="text" id="searchHistoryInput" oninput="handleSearchHistory()" placeholder="Search by name, phone, or invoice no..." class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:border-indigo-500 shadow-sm transition-colors">
+                </div>
+            </div>
+
+            <div class="flex-grow overflow-auto bg-white relative">
+                <table class="w-full text-sm text-left text-slate-600">
+                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 shadow-sm z-10">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 font-semibold">Date & Inv No</th>
+                            <th scope="col" class="px-6 py-4 font-semibold">Patient Details</th>
+                            <th scope="col" class="px-6 py-4 font-semibold text-right">Amount (₹)</th>
+                            <th scope="col" class="px-6 py-4 font-semibold text-center w-40">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-slate-100">
+                        <!-- Filled by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-container" class="print-only">
+        
+        <!-- Print Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <img src="https://i.postimg.cc/DymFnNFP/IMG-20260227-WA0003.jpg" alt="Avijit Pharma Logo" style="height: 85px; width: 85px; border-radius: 50%; object-fit: cover; border: 2px solid #e2e8f0;">
+                <div>
+                    <h1 style="margin: 0; font-size: 28px; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; font-family: sans-serif;">AVIJIT PHARMA</h1>
+                    <p style="margin: 4px 0 0 0; font-size: 13px; color: #475569; max-width: 250px;">281, Netaji Subhas Road, Howrah – 711101, West Bengal, India</p>
+                    <p style="margin: 3px 0 0 0; font-size: 13px; color: #475569;"><strong>Phone:</strong> +91 98362 32423</p>
+                    <p style="margin: 3px 0 0 0; font-size: 13px; color: #475569;"><strong>Web:</strong> www.avijitpharm.in</p>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <h2 style="margin: 0; font-size: 38px; color: #cbd5e1; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">INVOICE</h2>
+                <div style="margin-top: 12px; font-size: 14px; color: #334155; border: 1px solid #e2e8f0; padding: 10px; border-radius: 6px; background-color: #f8fafc;">
+                    <p style="margin: 0 0 4px 0;"><strong>Date:</strong> <span id="printDate"></span></p>
+                    <p style="margin: 0;"><strong>Invoice No:</strong> <span id="printInvNo" style="font-family: monospace;"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Patient Details -->
+        <div id="printPatientSection" style="margin-bottom: 25px; padding: 15px; background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; display: none;">
+            <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #cbd5e1; padding-bottom: 5px; font-weight: bold;">Billed To</h3>
+            <table style="width: 100%; font-size: 14px;">
+                <tr>
+                    <td style="width: 12%; color: #64748b; padding-bottom: 6px;">Name:</td>
+                    <td style="width: 38%; font-weight: 600; padding-bottom: 6px; color: #0f172a;" id="printPName">-</td>
+                    <td style="width: 12%; color: #64748b; padding-bottom: 6px;">Phone:</td>
+                    <td style="width: 38%; font-weight: 600; padding-bottom: 6px; color: #0f172a;" id="printPPhone">-</td>
+                </tr>
+                <tr>
+                    <td style="color: #64748b;">Age/Gen:</td>
+                    <td style="font-weight: 600; color: #0f172a;" id="printPAgeGen">-</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Print Table -->
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 14px;" class="invoice-table">
+            <thead>
+                <tr style="background-color: #f1f5f9; border-bottom: 2px solid #94a3b8; border-top: 2px solid #94a3b8;">
+                    <th style="padding: 12px 10px; text-align: center; width: 6%; font-weight: bold; color: #334155;">#</th>
+                    <th style="padding: 12px 10px; text-align: left; width: 49%; font-weight: bold; color: #334155;">Medicine Description</th>
+                    <th style="padding: 12px 10px; text-align: center; width: 15%; font-weight: bold; color: #334155;">Qty</th>
+                    <th style="padding: 12px 10px; text-align: right; width: 15%; font-weight: bold; color: #334155;">Rate (₹)</th>
+                    <th style="padding: 12px 10px; text-align: right; width: 15%; font-weight: bold; color: #334155;">Total (₹)</th>
+                </tr>
+            </thead>
+            <tbody id="printTableBody">
+                <!-- Rows injected via JS -->
+            </tbody>
+        </table>
+
+        <!-- Print Totals -->
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 40px;">
+            <div style="width: 320px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                <table style="width: 100%; font-size: 14px; border-collapse: collapse; background-color: #f8fafc;">
+                    <tr>
+                        <td style="padding: 10px 15px; color: #475569; text-align: left; border-bottom: 1px solid #e2e8f0;">Subtotal</td>
+                        <td style="padding: 10px 15px; text-align: right; font-weight: 600; border-bottom: 1px solid #e2e8f0;" id="printSubtotal">0.00</td>
+                    </tr>
+                    <tr id="printGstRow" style="display: none;">
+                        <td style="padding: 10px 15px; color: #475569; text-align: left; border-bottom: 1px solid #e2e8f0;">GST (<span id="printGstRate">0</span>%)</td>
+                        <td style="padding: 10px 15px; text-align: right; font-weight: 600; border-bottom: 1px solid #e2e8f0;" id="printGstAmount">0.00</td>
+                    </tr>
+                    <tr style="background-color: #e0e7ff;">
+                        <td style="padding: 15px; color: #1e3a8a; text-align: left; font-size: 16px; font-weight: 800;">Grand Total</td>
+                        <td style="padding: 15px; text-align: right; font-size: 18px; font-weight: 900; color: #1e3a8a;">₹<span id="printGrandTotal">0.00</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Print Footer / Advertisement -->
+        <div style="margin-top: auto; padding-top: 20px;">
+            <div style="text-align: center; color: #64748b; font-size: 12px; margin-bottom: 20px; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+                Thank you for choosing Avijit Pharma! Wishing you a speedy recovery.
+            </div>
+            <div id="printAdContainer" style="display: none; text-align: center; width: 100%; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; max-height: 250px;">
+                <img id="printAdImage" src="" alt="Advertisement" style="width: 100%; height: 100%; object-fit: cover; display: block; margin: 0 auto;">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data & State
+        const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/1CQs_E72eIqL9_SL08vcNdrozzJXDwefvnGyzVxlMAOQ/edit?usp=drivesdk";
+        let inventory = []; 
+        let cart = []; 
+        let nextCartId = 1;
+
+        // DOM Element Caching
+        const els = {
+            adUrl: document.getElementById('adBannerUrl'),
+            statusBadge: document.getElementById('statusBadge'),
+            statusDot: document.getElementById('statusDot'),
+            statusText: document.getElementById('statusText'),
+            inputDate: document.getElementById('inputDate'),
+            medicineList: document.getElementById('medicineList'),
+            createInvBtn: document.getElementById('createInvoiceBtn'),
+            cartBody: document.getElementById('cartTableBody'),
+            cartCount: document.getElementById('cartCount'),
+            cartSubtotal: document.getElementById('cartSubtotal')
+        };
+
+        // Initialize App
+        window.onload = function() {
+            const savedAd = localStorage.getItem('avijitAdBanner');
+            if(savedAd) els.adUrl.value = savedAd;
+
+            // Bind Events
+            els.inputDate.addEventListener('change', handleDateChange);
+
+            // Load saved data
+            loadCartState();
+            loadSheetData();
+        };
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const styles = {
+                success: 'bg-emerald-500',
+                error: 'bg-red-500',
+                info: 'bg-indigo-600'
+            };
+            
+            toast.className = `${styles[type] || styles.info} text-white px-5 py-3.5 rounded-xl shadow-xl shadow-black/10 flex items-center gap-3 text-sm font-semibold toast border border-white/10`;
+            
+            let icon = '';
+            if(type==='success') icon = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+            if(type==='error') icon = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            
+            toast.innerHTML = `${icon}<span>${message}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function updateStatus(state, msg) {
+            els.statusText.textContent = msg;
+            els.statusBadge.classList.remove('hidden');
+            
+            // Reset classes
+            els.statusBadge.className = "hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-colors";
+            els.statusDot.className = "w-2 h-2 rounded-full";
+
+            if(state === 'loading') {
+                els.statusBadge.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-700');
+                els.statusDot.classList.add('bg-amber-500', 'animate-pulse');
+            } else if(state === 'success') {
+                els.statusBadge.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-700');
+                els.statusDot.classList.add('bg-emerald-500');
+            } else if(state === 'error') {
+                els.statusBadge.classList.add('bg-red-50', 'border-red-200', 'text-red-700');
+                els.statusDot.classList.add('bg-red-500');
+            }
+        }
+
+        function toggleModal(modalId, contentId, show) {
+            const modal = document.getElementById(modalId);
+            const content = document.getElementById(contentId);
+            
+            if(show) {
+                modal.classList.remove('hidden');
+                // Trigger reflow for animation
+                void modal.offsetWidth; 
+                content.classList.remove('opacity-0', 'scale-95');
+                content.classList.add('opacity-100', 'scale-100');
+            } else {
+                content.classList.remove('opacity-100', 'scale-100');
+                content.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => modal.classList.add('hidden'), 200);
+            }
+        }
+
+        const openSettingsModal = () => toggleModal('settingsModal', 'settingsContent', true);
+        const closeSettingsModal = () => toggleModal('settingsModal', 'settingsContent', false);
+        const openInvoiceModal = () => toggleModal('invoiceModal', 'invoiceContent', true);
+        const closeInvoiceModal = () => toggleModal('invoiceModal', 'invoiceContent', false);
+        const openHistoryModal = () => {
+            toggleModal('historyModal', 'historyContent', true);
+            document.getElementById('searchHistoryInput').value = '';
+            renderHistory();
+        };
+        const closeHistoryModal = () => toggleModal('historyModal', 'historyContent', false);
+
+        function saveCartState() {
+            localStorage.setItem('avijitDraftCart', JSON.stringify({ cart, nextCartId }));
+        }
+
+        function loadCartState() {
+            const draft = localStorage.getItem('avijitDraftCart');
+            if (draft) {
+                try {
+                    const parsed = JSON.parse(draft);
+                    cart = parsed.cart || [];
+                    nextCartId = parsed.nextCartId || 1;
+                    renderCart();
+                } catch (e) { console.error("Draft load err", e); }
+            } else {
+                renderCart(); // show empty state
+            }
+        }
+
+        function saveAdBanner() {
+            const url = els.adUrl.value.trim();
+            if(url) {
+                localStorage.setItem('avijitAdBanner', url);
+                showToast("Ad Banner saved.", "success");
+            } else {
+                localStorage.removeItem('avijitAdBanner');
+                showToast("Ad Banner removed.", "info");
+            }
+        }
+
+        async function loadSheetData() {
+            let url = DEFAULT_SHEET_URL;
+            const sheetIdMatch = url.match(/\/d\/(.*?)(\/|$)/);
+            
+            if (!sheetIdMatch) {
+                showToast("Invalid Google Sheet URL format.", "error");
+                updateStatus('error', 'Invalid URL');
+                return;
+            }
+            
+            const sheetId = sheetIdMatch[1];
+            // Format strictly requests column indexing
+            const gvizUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+
+            updateStatus('loading', 'Syncing Sheet...');
+            closeSettingsModal();
+
+            try {
+                const response = await fetch(gvizUrl);
+                if (!response.ok) throw new Error("Network error");
+                
+                let text = await response.text();
+                const startIdx = text.indexOf('setResponse(') + 12;
+                const endIdx = text.length - 2;
+                const data = JSON.parse(text.substring(startIdx, endIdx));
+                
+                parseSheetData(data);
+                
+            } catch (error) {
+                console.error("Fetch err:", error);
+                updateStatus('error', 'Sync Failed');
+                showToast("Failed to fetch sheet. Check permissions.", "error");
+                disableInputs();
+            }
+        }
+
+        function parseSheetData(data) {
+            if(!data || !data.table || !data.table.rows) {
+                updateStatus('error', 'No Data');
+                return;
+            }
+
+            // Columns specified by user logic: Date(Col2), Name(Col3), Qty(Col4), Price(Col6)
+            // Gviz indexing is 0-based.
+            const idxDate = 1;
+            const idxName = 2;
+            const idxQty = 3;
+            const idxPrice = 5;
+
+            inventory = data.table.rows.map(row => {
+                const cells = row.c;
+                if (!cells) return null;
+
+                // Parse Date
+                let dateStr = '';
+                let rawDate = cells[idxDate] ? cells[idxDate].v : '';
+                if (typeof rawDate === 'string' && rawDate.startsWith('Date(')) {
+                    const m = rawDate.match(/Date\((\d+),(\d+),(\d+)\)/);
+                    if (m) dateStr = `${m[1]}-${String(Number(m[2])+1).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+                } else if(rawDate) {
+                    try {
+                        const d = new Date(rawDate);
+                        if(!isNaN(d)) dateStr = d.toISOString().split('T')[0];
+                        else dateStr = String(rawDate);
+                    } catch(e) { dateStr = String(rawDate); }
+                }
+
+                // Parse standard Indian formats dd-mm-yyyy if ISO failed
+                if(!dateStr && typeof rawDate === 'string') {
+                    let parts = rawDate.split(/[-/]/);
+                    if(parts.length === 3) {
+                        if(parts[2].length === 4) dateStr = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                    }
+                }
+
+                const name = cells[idxName] && cells[idxName].v ? String(cells[idxName].v) : '';
+                
+                let qty = 1;
+                if(cells[idxQty] && cells[idxQty].v != null) {
+                    qty = parseFloat(String(cells[idxQty].v).replace(/[^0-9.]/g, '')) || 1;
+                }
+
+                let totalPrice = 0;
+                if(cells[idxPrice] && cells[idxPrice].v != null) {
+                    totalPrice = parseFloat(String(cells[idxPrice].v).replace(/[^0-9.]/g, '')) || 0;
+                }
+
+                // We calculate unit price because user might change qty in the cart UI
+                let unitPrice = qty > 0 ? totalPrice / qty : 0;
+
+                if(!name) return null;
+                return { invId: 'med_' + Math.random().toString(36).substr(2, 9), date: dateStr, name, qty, unitPrice, originalTotal: totalPrice };
+            }).filter(Boolean).reverse();
+
+            if(inventory.length === 0) {
+                updateStatus('error', 'Sheet Empty');
+                showToast("No medicines found in sheet.", "error");
+            } else {
+                updateStatus('success', 'Data Synced');
+                showToast("Medicine database updated!", "success");
+                enableInputs();
+            }
+        }
+
+        function enableInputs() {
+            els.inputDate.disabled = false;
+            // Auto-select most recent date
+            const dates = inventory.map(i => i.date).filter(d => d.match(/^\d{4}-\d{2}-\d{2}$/));
+            if(dates.length > 0) {
+                dates.sort();
+                els.inputDate.value = dates[dates.length - 1];
+                handleDateChange();
+            }
+        }
+
+        function disableInputs() {
+            els.inputDate.disabled = true;
+            if(els.medicineList) els.medicineList.innerHTML = '<div class="text-center p-6 text-slate-500 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-300">Loading Google Sheet...</div>';
+        }
+
+        function handleDateChange() {
+            const selected = els.inputDate.value;
+            if(!selected) {
+                els.medicineList.innerHTML = '<div class="text-center p-6 text-slate-500 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-300">Select a date to view available medicines.</div>';
+                return;
+            }
+
+            const filtered = inventory.filter(item => item.date === selected);
+            
+            if(filtered.length === 0) {
+                els.medicineList.innerHTML = '<div class="text-center p-6 text-slate-500 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-300 font-medium">No medicines found for this date.</div>';
+                return;
+            }
+
+            els.medicineList.innerHTML = '';
+            filtered.forEach(med => {
+                const isChecked = cart.some(c => c.invId === med.invId) ? 'checked' : '';
+                
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label class="flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:bg-indigo-50 cursor-pointer transition-all has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-300">
+                        <input type="checkbox" ${isChecked} onchange="toggleMedicine('${med.invId}', this.checked)" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 transition-colors">
+                        <div class="flex-grow">
+                            <p class="font-bold text-slate-800 text-sm leading-tight">${med.name}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Qty: <span class="font-semibold text-slate-700">${med.qty}</span></p>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p class="font-black text-slate-800">₹${med.originalTotal.toFixed(2)}</p>
+                        </div>
+                    </label>
+                `;
+                els.medicineList.appendChild(div);
+            });
+        }
+
+        function toggleMedicine(invId, isChecked) {
+            if(isChecked) {
+                const med = inventory.find(i => i.invId === invId);
+                if(med && !cart.some(c => c.invId === invId)) {
+                    cart.unshift({
+                        id: nextCartId++,
+                        invId: med.invId,
+                        name: med.name,
+                        price: med.unitPrice,
+                        qty: med.qty,
+                        total: med.originalTotal,
+                        addedAt: Date.now()
+                    });
+                    showToast(`${med.name} added.`, "success");
+                }
+            } else {
+                cart = cart.filter(c => c.invId !== invId);
+            }
+            renderCart();
+            saveCartState();
+            handleDateChange(); // Refresh checkbox styles
+        }
+
+        function removeFromCart(id) {
+            cart = cart.filter(item => item.id !== id);
+            renderCart();
+            saveCartState();
+            handleDateChange(); // Refresh checkbox selection in dashboard
+        }
+
+        function renderCart() {
+            els.cartBody.innerHTML = '';
+            
+            if(cart.length === 0) {
+                els.cartBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-16 text-center">
+                            <div class="flex flex-col items-center justify-center text-slate-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                                <p class="font-medium text-slate-500">Invoice is currently empty</p>
+                                <p class="text-xs mt-1">Select a date and medicine to begin.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                els.cartCount.textContent = "0 items";
+                els.cartSubtotal.textContent = "0.00";
+                els.createInvBtn.disabled = true;
+                return;
+            }
+
+            let subtotal = 0;
+            cart.forEach(item => {
+                subtotal += item.total;
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                
+                const ageMs = Date.now() - item.addedAt;
+                if(ageMs < 10000) {
+                    tr.classList.add('recent-item');
+                    setTimeout(() => tr.classList.remove('recent-item'), 10000 - ageMs);
+                }
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-semibold text-slate-800">${item.name}</td>
+                    <td class="px-6 py-4 text-center font-medium">${item.qty}</td>
+                    <td class="px-6 py-4 text-right text-slate-500">${item.price.toFixed(2)}</td>
+                    <td class="px-6 py-4 text-right font-bold text-slate-800">${item.total.toFixed(2)}</td>
+                    <td class="px-4 py-4 text-center">
+                        <button onclick="removeFromCart(${item.id})" class="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition-all" title="Remove">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </td>
+                `;
+                els.cartBody.appendChild(tr);
+            });
+
+            els.cartCount.textContent = `${cart.length} item${cart.length > 1 ? 's' : ''}`;
+            els.cartSubtotal.textContent = subtotal.toFixed(2);
+            els.createInvBtn.disabled = false;
+        }
+
+        function generateAndPrint() {
+            if(cart.length === 0) return;
+
+            // Date & ID
+            const today = new Date();
+            const displayDate = today.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+            document.getElementById('printDate').textContent = displayDate;
+            const invNo = 'INV-' + today.getFullYear() + String(today.getMonth()+1).padStart(2,'0') + '-' + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('printInvNo').textContent = invNo;
+
+            // Patient
+            const pName = document.getElementById('patientName').value.trim();
+            const pAge = document.getElementById('patientAge').value.trim();
+            const pGender = document.getElementById('patientGender').value;
+            const pPhone = document.getElementById('patientPhone').value.trim();
+
+            const pSection = document.getElementById('printPatientSection');
+            let ageGenStr = '';
+            
+            if(pName || pPhone || pAge || pGender) {
+                pSection.style.display = 'block';
+                document.getElementById('printPName').textContent = pName || 'N/A';
+                document.getElementById('printPPhone').textContent = pPhone || 'N/A';
+                
+                let ageGen = [];
+                if(pAge) ageGen.push(pAge + ' Yrs');
+                if(pGender) ageGen.push(pGender);
+                ageGenStr = ageGen.length > 0 ? ageGen.join(' / ') : 'N/A';
+                document.getElementById('printPAgeGen').textContent = ageGenStr;
+            } else {
+                pSection.style.display = 'none';
+            }
+
+            // Table
+            const tbody = document.getElementById('printTableBody');
+            tbody.innerHTML = '';
+            let subtotal = 0;
+
+            cart.forEach((item, idx) => {
+                subtotal += item.total;
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = "1px solid #e2e8f0";
+                if(idx % 2 === 1) tr.style.backgroundColor = "#f8fafc"; // Print Zebra Stripe
+                
+                tr.innerHTML = `
+                    <td style="padding: 12px 10px; text-align: center; color: #475569;">${idx + 1}</td>
+                    <td style="padding: 12px 10px; font-weight: 600; color: #0f172a;">${item.name}</td>
+                    <td style="padding: 12px 10px; text-align: center;">${item.qty}</td>
+                    <td style="padding: 12px 10px; text-align: right; color: #475569;">${item.price.toFixed(2)}</td>
+                    <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: #0f172a;">${item.total.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Totals
+            document.getElementById('printSubtotal').textContent = subtotal.toFixed(2);
+            const gstRate = parseFloat(document.getElementById('gstRate').value) || 0;
+            const gstRow = document.getElementById('printGstRow');
+            let grandTotal = subtotal;
+            let gstAmount = 0;
+
+            if(gstRate > 0) {
+                gstAmount = (subtotal * gstRate) / 100;
+                grandTotal += gstAmount;
+                document.getElementById('printGstRate').textContent = gstRate;
+                document.getElementById('printGstAmount').textContent = gstAmount.toFixed(2);
+                gstRow.style.display = 'table-row';
+            } else {
+                gstRow.style.display = 'none';
+            }
+            document.getElementById('printGrandTotal').textContent = grandTotal.toFixed(2);
+
+            // Ads
+            const adUrl = localStorage.getItem('avijitAdBanner');
+            const adContainer = document.getElementById('printAdContainer');
+            if(adUrl) {
+                document.getElementById('printAdImage').src = adUrl;
+                adContainer.style.display = 'block';
+            } else {
+                adContainer.style.display = 'none';
+            }
+            
+            // Record to History
+            const record = {
+                id: invNo,
+                timestamp: Date.now(),
+                displayDate,
+                patient: { name: pName, phone: pPhone, ageGenStr },
+                cart: JSON.parse(JSON.stringify(cart)),
+                totals: { subtotal, gstRate, gstAmount, grandTotal }
+            };
+            
+            let history = JSON.parse(localStorage.getItem('avijitInvoiceHistory') || '[]');
+            history.unshift(record);
+            localStorage.setItem('avijitInvoiceHistory', JSON.stringify(history));
+            
+            // Clear Drafts
+            cart = [];
+            nextCartId = 1;
+            saveCartState();
+            
+            // Close & Print
+            closeInvoiceModal();
+            setTimeout(() => {
+                window.print();
+                // Clear patient form after print to be ready for next
+                document.getElementById('patientName').value = '';
+                document.getElementById('patientAge').value = '';
+                document.getElementById('patientGender').value = '';
+                document.getElementById('patientPhone').value = '';
+                document.getElementById('gstRate').value = '0';
+            }, 300);
+        }
+
+        function handleSearchHistory() {
+            renderHistory(document.getElementById('searchHistoryInput').value);
+        }
+
+        function renderHistory(query = '') {
+            const tbody = document.getElementById('historyTableBody');
+            let history = JSON.parse(localStorage.getItem('avijitInvoiceHistory') || '[]');
+            
+            if(query) {
+                const q = query.toLowerCase();
+                history = history.filter(inv => 
+                    inv.id.toLowerCase().includes(q) ||
+                    inv.displayDate.toLowerCase().includes(q) ||
+                    (inv.patient.name && inv.patient.name.toLowerCase().includes(q)) ||
+                    (inv.patient.phone && inv.patient.phone.toLowerCase().includes(q))
+                );
+            }
+
+            tbody.innerHTML = '';
+            
+            if(history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-6 py-12 text-center text-slate-500 italic">No historical records found.</td></tr>`;
+                return;
+            }
+
+            history.forEach(inv => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                
+                const pName = inv.patient.name || '<span class="text-slate-400 italic text-xs">Guest Customer</span>';
+                const pPhone = inv.patient.phone || '';
+                
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-800">${inv.id}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">${inv.displayDate}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-slate-700">${pName}</div>
+                        ${pPhone ? `<div class="text-xs text-slate-500 mt-0.5">${pPhone}</div>` : ''}
+                    </td>
+                    <td class="px-6 py-4 text-right font-black text-slate-800">
+                        ₹${inv.totals.grandTotal.toFixed(2)}
+                    </td>
+                    <td class="px-6 py-4 text-center space-x-1.5">
+                        <button onclick="reprintInvoice('${inv.id}')" class="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm" title="Print Again">
+                            Print
+                        </button>
+                        <button onclick="deleteInvoice('${inv.id}')" class="bg-white border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 px-3 py-2 rounded-xl text-xs transition-colors shadow-sm" title="Delete Record">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function reprintInvoice(id) {
+            let history = JSON.parse(localStorage.getItem('avijitInvoiceHistory') || '[]');
+            const inv = history.find(i => i.id === id);
+            
+            if(!inv) { showToast("Record corrupted.", "error"); return; }
+
+            document.getElementById('printDate').textContent = inv.displayDate;
+            document.getElementById('printInvNo').textContent = inv.id;
+
+            const pSection = document.getElementById('printPatientSection');
+            if(inv.patient.name || inv.patient.phone || inv.patient.ageGenStr) {
+                pSection.style.display = 'block';
+                document.getElementById('printPName').textContent = inv.patient.name || '-';
+                document.getElementById('printPPhone').textContent = inv.patient.phone || '-';
+                document.getElementById('printPAgeGen').textContent = inv.patient.ageGenStr || '-';
+            } else {
+                pSection.style.display = 'none';
+            }
+
+            const tbody = document.getElementById('printTableBody');
+            tbody.innerHTML = '';
+            
+            inv.cart.forEach((item, idx) => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = "1px solid #e2e8f0";
+                if(idx % 2 === 1) tr.style.backgroundColor = "#f8fafc";
+                tr.innerHTML = `
+                    <td style="padding: 12px 10px; text-align: center; color: #475569;">${idx + 1}</td>
+                    <td style="padding: 12px 10px; font-weight: 600; color: #0f172a;">${item.name}</td>
+                    <td style="padding: 12px 10px; text-align: center;">${item.qty}</td>
+                    <td style="padding: 12px 10px; text-align: right; color: #475569;">${item.price.toFixed(2)}</td>
+                    <td style="padding: 12px 10px; text-align: right; font-weight: 700; color: #0f172a;">${item.total.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('printSubtotal').textContent = inv.totals.subtotal.toFixed(2);
+            
+            const gstRow = document.getElementById('printGstRow');
+            if(inv.totals.gstRate > 0) {
+                document.getElementById('printGstRate').textContent = inv.totals.gstRate;
+                document.getElementById('printGstAmount').textContent = inv.totals.gstAmount.toFixed(2);
+                gstRow.style.display = 'table-row';
+            } else {
+                gstRow.style.display = 'none';
+            }
+            document.getElementById('printGrandTotal').textContent = inv.totals.grandTotal.toFixed(2);
+
+            const adUrl = localStorage.getItem('avijitAdBanner');
+            const adContainer = document.getElementById('printAdContainer');
+            if(adUrl) {
+                document.getElementById('printAdImage').src = adUrl;
+                adContainer.style.display = 'block';
+            } else {
+                adContainer.style.display = 'none';
+            }
+
+            closeHistoryModal();
+            setTimeout(() => window.print(), 300);
+        }
+
+        function deleteInvoice(id) {
+            let history = JSON.parse(localStorage.getItem('avijitInvoiceHistory') || '[]');
+            history = history.filter(i => i.id !== id);
+            localStorage.setItem('avijitInvoiceHistory', JSON.stringify(history));
+            
+            showToast(`Record ${id} removed.`, "info");
+            handleSearchHistory(); // Refresh view
+        }
+
+    </script>
+</body>
+</html>

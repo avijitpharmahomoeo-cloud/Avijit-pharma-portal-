@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Smooth slide up animation for Action Sheet and Modals */
+        .slide-up {
+            animation: slideUp 0.3s ease-out forwards;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Toast notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #10B981;
+            color: #fff;
+            text-align: center;
+            border-radius: 9999px;
+            padding: 12px 24px;
+            position: fixed;
+            z-index: 100;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s, visibility 0.3s;
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
+        
+        /* Hide scrollbar for a native app feel */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        /* Rich Text Editor empty placeholder */
+        #blogEditor:empty:before {
+            content: "Write your blog content here...";
+            color: #9ca3af;
+            cursor: text;
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased flex items-center justify-center min-h-screen sm:p-4">
+
+    <!-- Hidden iframe for silent Google Form submission -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" onload="handleIframeLoad()"></iframe>
+
+    <!-- Mobile Device Container -->
+    <div class="w-full max-w-md bg-gray-50 h-screen sm:h-[850px] sm:rounded-[2.5rem] sm:shadow-2xl overflow-hidden relative flex flex-col border border-gray-200">
+        
+        <!-- App Header -->
+        <header class="bg-white pt-12 pb-4 px-6 rounded-b-3xl shadow-sm z-10 relative flex-shrink-0">
+            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+            <p class="text-sm text-gray-500 mt-1">Manage content and updates</p>
+        </header>
+
+        <!-- Main Scrollable Content -->
+        <main class="flex-1 overflow-y-auto p-5 space-y-6 pb-24">
+
+            <!-- Section 1: Case Studies -->
+            <section>
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Case Studies</h2>
+                <div class="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 space-y-1">
+                    <button onclick="window.location.href='view.html'" class="w-full flex items-center p-3 text-left hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i data-lucide="folder-clock" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">View Old Case Study</h3>
+                            <p class="text-xs text-gray-500">Browse previous reports</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </button>
+                    
+                    <button onclick="window.open('https://forms.gle/SR3Mwqwm6LaJgMjn6', '_blank')" class="w-full flex items-center p-3 text-left hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors">
+                        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i data-lucide="file-plus-2" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">Add Report</h3>
+                            <p class="text-xs text-gray-500">Submit a new case study form</p>
+                        </div>
+                        <i data-lucide="external-link" class="w-4 h-4 text-gray-400"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Section 2: Banners -->
+            <section>
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Media Banners</h2>
+                <div class="bg-white rounded-2xl p-2 shadow-sm border border-gray-100">
+                    <button onclick="openActionSheet('banner')" class="w-full flex items-center p-3 text-left hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i data-lucide="image" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">Manage Banners</h3>
+                            <p class="text-xs text-gray-500">Add or view banner images</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Section 3: Announcements -->
+            <section>
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Communications</h2>
+                <div class="bg-white rounded-2xl p-2 shadow-sm border border-gray-100">
+                    <button onclick="openActionSheet('announcement')" class="w-full flex items-center p-3 text-left hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors">
+                        <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i data-lucide="megaphone" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">Post Announcements</h3>
+                            <p class="text-xs text-gray-500">Add or view announcements</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Section 4: Blogs -->
+            <section>
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">Content Creation</h2>
+                <div class="bg-white rounded-2xl p-2 shadow-sm border border-gray-100">
+                    <button onclick="openBlogModal()" class="w-full flex items-center p-3 text-left hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors">
+                        <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i data-lucide="pen-tool" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">Post New Blog</h3>
+                            <p class="text-xs text-gray-500">Write an article with rich text formatting</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Section 5: Tools -->
+            <section>
+                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 px-1">External Tools</h2>
+                <div class="bg-white rounded-2xl p-2 shadow-sm border border-gray-100">
+                    <button onclick="window.open('https://postimages.org/', '_blank')" class="w-full flex items-center p-3 text-left hover:bg-gray-50 active:bg-gray-100 rounded-xl transition-colors">
+                        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center mr-4 flex-shrink-0">
+                            <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-medium text-gray-900">PostImg Hosting</h3>
+                            <p class="text-xs text-gray-500">Upload images to get links</p>
+                        </div>
+                        <i data-lucide="external-link" class="w-4 h-4 text-gray-400"></i>
+                    </button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Action Sheet Overlay (Bottom Sheet) -->
+    <div id="actionSheetOverlay" class="fixed inset-0 bg-black/40 hidden z-40 fade-in" onclick="closeActionSheet()"></div>
+    <div id="actionSheet" class="fixed bottom-0 left-0 right-0 w-full sm:max-w-md sm:left-1/2 sm:-translate-x-1/2 bg-white rounded-t-3xl z-50 hidden flex-col pb-8 pt-2 px-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+        <div class="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-5"></div>
+        <h3 id="actionSheetTitle" class="text-center font-semibold text-gray-900 mb-4 text-lg">Select Option</h3>
+        
+        <div class="space-y-2">
+            <button id="actionAddBtn" class="w-full bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-indigo-600 font-medium py-4 px-6 rounded-2xl flex items-center justify-center transition-colors">
+                <i data-lucide="plus" class="w-5 h-5 mr-2"></i> Add New
+            </button>
+            <button id="actionViewBtn" class="w-full bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-gray-800 font-medium py-4 px-6 rounded-2xl flex items-center justify-center transition-colors">
+                <i data-lucide="list" class="w-5 h-5 mr-2"></i> View Existing
+            </button>
+        </div>
+        <button onclick="closeActionSheet()" class="w-full mt-4 text-gray-500 font-medium py-3 rounded-xl active:bg-gray-100 hover:bg-gray-50">Cancel</button>
+    </div>
+
+    <!-- Modal: Add Content -->
+    <div id="addModalOverlay" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl transform transition-all">
+            
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 id="addModalTitle" class="text-xl font-bold text-gray-900">Add Link</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1.5 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Google Form wrapped for silent submission -->
+                <form id="silentForm" action="https://docs.google.com/forms/d/e/1FAIpQLScOYmwI9RAFQ2IDgmZJ9Rbf1gElbqP3N_-2eDL_-vW-EL5gWg/formResponse" method="POST" target="hidden_iframe" onsubmit="return handleFormSubmit()">
+                    
+                    <!-- Hidden inputs for routing fields reliably to Google Forms -->
+                    <!-- Banner Entry -->
+                    <input type="hidden" id="bannerHidden" name="entry.1637701219" value="">
+                    <!-- Announcement Entry -->
+                    <input type="hidden" id="announcementHidden" name="entry.1120650628" value="">
+
+                    <div class="mb-5">
+                        <label for="linkInput" class="block text-sm font-medium text-gray-700 mb-2">Paste Image/Banner Link</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="link" class="h-5 w-5 text-gray-400"></i>
+                            </div>
+                            <!-- Notice there is NO 'name' attribute here. JS maps the value to the correct hidden input before submit -->
+                            <input type="url" id="linkInput" required placeholder="https://example.com/image.jpg" 
+                                class="pl-10 w-full border-gray-300 border focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-xl py-3 px-4 outline-none transition-all text-sm">
+                        </div>
+                        <!-- Quick helper link -->
+                        <div class="mt-2 text-right">
+                            <a href="https://postimages.org/" target="_blank" class="text-xs text-indigo-500 hover:text-indigo-700 font-medium inline-flex items-center">
+                                Need an image link? Use PostImg <i data-lucide="external-link" class="w-3 h-3 ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 mt-8">
+                        <button type="button" onclick="closeModal()" class="flex-1 bg-gray-100 text-gray-700 font-medium py-3 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
+                        <button type="submit" id="submitBtn" class="flex-1 bg-indigo-600 text-white font-medium py-3 rounded-xl shadow-md shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all flex justify-center items-center">
+                            <span>Submit Silently</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Blog -->
+    <div id="blogModalOverlay" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4 fade-in">
+        <div class="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl transform transition-all flex flex-col max-h-[90vh]">
+            
+            <div class="p-6 overflow-y-auto">
+                <div class="flex justify-between items-center mb-5">
+                    <h3 class="text-xl font-bold text-gray-900">Create Blog Post</h3>
+                    <button onclick="closeBlogModal()" class="text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1.5 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <form id="blogForm" action="https://docs.google.com/forms/d/e/1FAIpQLSfYNg03BMKKaZ_MXTOlEYTDrbXTp24GtDwiesrgceZOXuRQDA/formResponse" method="POST" target="hidden_iframe" onsubmit="return handleBlogSubmit()">
+                    
+                    <div class="mb-4">
+                        <label for="blogImageLink" class="block text-sm font-medium text-gray-700 mb-2">Featured Image Link</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="image" class="h-5 w-5 text-gray-400"></i>
+                            </div>
+                            <!-- Entry for Image URL -->
+                            <input type="url" id="blogImageLink" name="entry.650224921" required placeholder="https://example.com/blog-image.jpg" 
+                                class="pl-10 w-full border-gray-300 border focus:border-purple-500 focus:ring-2 focus:ring-purple-200 rounded-xl py-2 px-4 outline-none transition-all text-sm">
+                        </div>
+                    </div>
+
+                    <div class="mb-5 flex flex-col">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Blog Content</label>
+                        
+                        <!-- Rich Text Toolbar -->
+                        <div class="bg-gray-50 border border-gray-300 border-b-0 rounded-t-xl p-2 flex gap-1">
+                            <button type="button" onclick="formatText('bold')" class="p-2 hover:bg-gray-200 rounded text-gray-700 transition-colors" title="Bold">
+                                <i data-lucide="bold" class="w-4 h-4"></i>
+                            </button>
+                            <button type="button" onclick="formatText('italic')" class="p-2 hover:bg-gray-200 rounded text-gray-700 transition-colors" title="Italic">
+                                <i data-lucide="italic" class="w-4 h-4"></i>
+                            </button>
+                            <button type="button" onclick="formatText('underline')" class="p-2 hover:bg-gray-200 rounded text-gray-700 transition-colors" title="Underline">
+                                <i data-lucide="underline" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Content Editable Area -->
+                        <div id="blogEditor" contenteditable="true" 
+                            class="w-full border-gray-300 border rounded-b-xl p-4 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all text-sm min-h-[150px] max-h-[250px] overflow-y-auto bg-white whitespace-pre-wrap"></div>
+                        
+                        <!-- Hidden input to hold the HTML content for submission -->
+                        <input type="hidden" id="blogContentInput" name="entry.1701147163">
+                    </div>
+
+                    <div class="flex gap-3 mt-6">
+                        <button type="button" onclick="closeBlogModal()" class="flex-1 bg-gray-100 text-gray-700 font-medium py-3 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
+                        <button type="submit" id="blogSubmitBtn" class="flex-1 bg-purple-600 text-white font-medium py-3 rounded-xl shadow-md shadow-purple-200 hover:bg-purple-700 active:scale-95 transition-all flex justify-center items-center">
+                            <span>Publish Post</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast">Successfully submitted!</div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // State Variables
+        let currentActionType = ''; // 'banner' or 'announcement'
+        let isSubmitting = false;
+
+        // Constants
+        const URLs = {
+            bannerView: 'https://docs.google.com/spreadsheets/d/1uSyygbhUBd_1zkqUsTLLq-krYStCmevWdi8DIvmg5MM/edit?usp=sharing',
+            announcementView: 'https://docs.google.com/spreadsheets/d/1664WhciB9I_kROpLZePJ707F1TjwMLsuJr1eDsne460/edit?usp=sharing',
+        };
+
+        // DOM Elements
+        const actionSheet = document.getElementById('actionSheet');
+        const actionSheetOverlay = document.getElementById('actionSheetOverlay');
+        const actionSheetTitle = document.getElementById('actionSheetTitle');
+        const actionAddBtn = document.getElementById('actionAddBtn');
+        const actionViewBtn = document.getElementById('actionViewBtn');
+        
+        const addModalOverlay = document.getElementById('addModalOverlay');
+        const addModalTitle = document.getElementById('addModalTitle');
+        const linkInput = document.getElementById('linkInput');
+        const bannerHidden = document.getElementById('bannerHidden');
+        const announcementHidden = document.getElementById('announcementHidden');
+        const submitBtn = document.getElementById('submitBtn');
+
+        const blogModalOverlay = document.getElementById('blogModalOverlay');
+        const blogEditor = document.getElementById('blogEditor');
+        const blogContentInput = document.getElementById('blogContentInput');
+        const blogSubmitBtn = document.getElementById('blogSubmitBtn');
+        const blogForm = document.getElementById('blogForm');
+
+        function openActionSheet(type) {
+            currentActionType = type;
+            
+            // Setup Text
+            actionSheetTitle.textContent = type === 'banner' ? 'Manage Banners' : 'Manage Announcements';
+            
+            // Setup Actions
+            actionAddBtn.onclick = () => {
+                closeActionSheet();
+                setTimeout(() => openAddModal(type), 200); // slight delay for smooth transition
+            };
+            
+            actionViewBtn.onclick = () => {
+                closeActionSheet();
+                const url = type === 'banner' ? URLs.bannerView : URLs.announcementView;
+                window.open(url, '_blank');
+            };
+
+            // Show UI
+            actionSheetOverlay.style.display = 'block';
+            actionSheet.style.display = 'flex';
+            actionSheet.classList.add('slide-up');
+        }
+
+        function closeActionSheet() {
+            actionSheetOverlay.style.display = 'none';
+            actionSheet.style.display = 'none';
+            actionSheet.classList.remove('slide-up');
+        }
+
+        function openAddModal(type) {
+            addModalTitle.textContent = type === 'banner' ? 'Add New Banner' : 'Add Announcement';
+            linkInput.value = '';
+            addModalOverlay.style.display = 'flex';
+        }
+
+        function closeModal() {
+            addModalOverlay.style.display = 'none';
+            resetSubmitButton();
+        }
+
+        function openBlogModal() {
+            blogForm.reset();
+            blogEditor.innerHTML = ''; // Clear editor
+            blogModalOverlay.style.display = 'flex';
+        }
+
+        function closeBlogModal() {
+            blogModalOverlay.style.display = 'none';
+            resetBlogSubmitButton();
+        }
+
+        function formatText(command) {
+            document.execCommand(command, false, null);
+            blogEditor.focus();
+        }
+
+        function handleBlogSubmit() {
+            // Ensure content isn't empty
+            if (blogEditor.innerText.trim() === '') {
+                alert("Blog content cannot be empty.");
+                return false;
+            }
+            
+            // Copy rich text HTML into the hidden input for Google Forms
+            blogContentInput.value = blogEditor.innerHTML;
+
+            isSubmitting = true;
+            
+            // UI feedback
+            blogSubmitBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Publishing...
+            `;
+            blogSubmitBtn.disabled = true;
+            blogSubmitBtn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            return true; // allow form to submit to iframe
+        }
+
+        function resetBlogSubmitButton() {
+            blogSubmitBtn.innerHTML = '<span>Publish Post</span>';
+            blogSubmitBtn.disabled = false;
+            blogSubmitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+        }
+
+        function handleFormSubmit() {
+            const form = document.getElementById('silentForm');
+            
+            // Reset both hidden fields and disable them so the wrong one isn't sent
+            bannerHidden.value = '';
+            bannerHidden.disabled = true;
+            announcementHidden.value = '';
+            announcementHidden.disabled = true;
+            
+            // Route the visible input value and update the form action URL
+            if (currentActionType === 'banner') {
+                bannerHidden.value = linkInput.value;
+                bannerHidden.disabled = false; // Only send banner entry
+                form.action = 'https://docs.google.com/forms/d/e/1FAIpQLScOYmwI9RAFQ2IDgmZJ9Rbf1gElbqP3N_-2eDL_-vW-EL5gWg/formResponse';
+            } else if (currentActionType === 'announcement') {
+                announcementHidden.value = linkInput.value;
+                announcementHidden.disabled = false; // Only send announcement entry
+                // New dedicated form URL for Announcements
+                form.action = 'https://docs.google.com/forms/d/e/1FAIpQLSfirXEHlK6T5eHNvts8kC6-6w3CXDcTYD-_uZz-qN6Z-CzTJw/formResponse';
+            }
+
+            isSubmitting = true;
+            
+            // UI feedback
+            submitBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Submitting...
+            `;
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            return true; // allow form to submit to iframe
+        }
+
+        function handleIframeLoad() {
+            if (isSubmitting) {
+                // Form was submitted and iframe reloaded
+                isSubmitting = false;
+                showToast();
+                closeModal();
+                closeBlogModal();
+            }
+        }
+
+        function resetSubmitButton() {
+            submitBtn.innerHTML = '<span>Submit Silently</span>';
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-80', 'cursor-not-allowed');
+        }
+
+        function showToast() {
+            const toast = document.getElementById("toast");
+            toast.className = "show";
+            setTimeout(function(){ toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+    </script>
+</body>
+</html>

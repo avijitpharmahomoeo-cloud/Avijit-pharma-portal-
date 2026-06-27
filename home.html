@@ -19,6 +19,7 @@
             100% { transform: scale(1); }
         }
 
+        /* Prevent iOS zoom on input focus */
         input, select, textarea { font-size: 16px !important; }
 
         @media (max-width: 768px) {
@@ -45,11 +46,31 @@
         .search-result-item:hover {
             background-color: #f1f5f9;
         }
+
+        /* Custom scrollbars */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
     </style>
 </head>
-<body class="text-slate-900 pb-24 md:pb-0">
+<body class="text-slate-900 pb-24 md:pb-0 flex flex-col min-h-screen">
 
-    <!-- Navbar -->
     <nav class="sticky top-0 z-50 bg-white border-b border-slate-200 premium-shadow">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex items-center justify-between h-16">
@@ -70,7 +91,7 @@
                         <i class="fas fa-bars text-xl"></i>
                     </button>
 
-                    <div class="hidden lg:flex gap-2 ml-2">
+                    <div class="hidden md:flex flex-wrap gap-2 ml-2">
                         <button onclick="openModal('medicineModal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all">
                             <i class="fas fa-plus mr-1"></i> Add Stock
                         </button>
@@ -81,14 +102,13 @@
                 </div>
             </div>
 
-            <!-- Filters Area -->
             <div class="pb-4 flex flex-col md:flex-row gap-3">
                 <div class="relative flex-1">
                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
                     <input type="text" id="searchInput" placeholder="Search medicines in stock..." 
                         class="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all outline-none text-sm">
                 </div>
-                <div class="flex gap-2">
+                <div class="flex gap-2 w-full md:w-auto">
                     <select id="categoryFilter" class="flex-1 md:w-48 bg-slate-100 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer font-medium text-slate-600">
                         <option value="All">All Categories</option>
                         <option>Mother Tincture</option>
@@ -103,7 +123,6 @@
         </div>
     </nav>
 
-    <!-- Side Navigation Menu -->
     <div id="sideMenuOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden transition-opacity" onclick="toggleSideMenu(false)"></div>
     <div id="sideMenu" class="fixed top-0 right-0 h-full w-72 bg-white z-[101] shadow-2xl flex flex-col">
         <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-blue-600 text-white">
@@ -112,7 +131,7 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <div class="flex-1 overflow-y-auto p-4 space-y-1">
+        <div class="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar">
             <a href="sales.html" class="flex items-center gap-3 p-3.5 rounded-xl hover:bg-blue-50 text-slate-700 hover:text-blue-600 font-medium transition-all group">
                 <div class="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors"><i class="fas fa-chart-line"></i></div>
                 <span>Sales Report</span>
@@ -155,9 +174,7 @@
         </div>
     </div>
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto p-4 md:p-6">
-        <!-- ALERTS -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
         <div id="alertBanner" class="hidden mb-6 space-y-3">
             <div class="bg-red-50 border border-red-100 rounded-2xl p-4 md:p-5">
                 <div class="flex items-center gap-3 mb-3">
@@ -168,34 +185,32 @@
             </div>
         </div>
 
-        <!-- Dashboard Stats -->
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <div class="glass-card p-4 rounded-2xl border-l-4 border-blue-600">
-                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Medicines</p>
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest truncate">Medicines</p>
                 <h2 id="totalMeds" class="text-2xl font-bold mt-1">0</h2>
             </div>
             <div class="glass-card p-4 rounded-2xl border-l-4 border-emerald-500">
-                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Stock Value</p>
-                <h2 id="totalValue" class="text-2xl font-bold mt-1 text-emerald-600">₹0.00</h2>
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest truncate">Stock Value</p>
+                <h2 id="totalValue" class="text-xl md:text-2xl font-bold mt-1 text-emerald-600 truncate">₹0.00</h2>
             </div>
             <div class="glass-card p-4 rounded-2xl border-l-4 border-orange-500">
-                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Low Stock</p>
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest truncate">Low Stock</p>
                 <h2 id="lowStockCount" class="text-2xl font-bold mt-1 text-orange-600">0</h2>
             </div>
             <div class="glass-card p-4 rounded-2xl border-l-4 border-red-600">
-                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Expiring</p>
+                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest truncate">Expiring</p>
                 <h2 id="expiryAlertCount" class="text-2xl font-bold mt-1 text-red-600">0</h2>
             </div>
         </div>
 
-        <!-- Inventory List -->
         <div class="mb-4 flex justify-between items-center">
             <h3 class="text-lg font-bold text-slate-800">Medicine Inventory</h3>
             <span id="resultCount" class="text-xs font-bold text-slate-400 bg-slate-200 px-3 py-1 rounded-full">0 items</span>
         </div>
 
-        <div class="hidden md:block glass-card rounded-2xl overflow-hidden premium-shadow">
-            <table class="w-full text-left">
+        <div class="hidden md:block glass-card rounded-2xl premium-shadow table-container">
+            <table class="w-full text-left whitespace-nowrap">
                 <thead class="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
                     <tr>
                         <th class="px-6 py-4">Medicine Name</th>
@@ -217,111 +232,128 @@
         </div>
     </main>
 
-    <!-- Mobile Action Bar -->
     <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 flex md:hidden gap-3 z-40 premium-shadow">
         <button onclick="openModal('medicineModal')" class="flex-1 bg-blue-600 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2"><i class="fas fa-plus"></i> Add</button>
         <button onclick="openModal('salesModal')" class="flex-1 bg-slate-900 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2"><i class="fas fa-shopping-cart"></i> Sale</button>
     </div>
 
-    <!-- Modals Overlay -->
     <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden transition-opacity" onclick="closeAllModals()"></div>
 
-    <!-- Medicine Modal -->
-    <div id="medicineModal" class="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-[70] hidden p-4">
-        <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden max-h-[95vh] flex flex-col">
-            <div class="p-6 bg-blue-600 text-white flex justify-between items-center">
+    <div id="medicineModal" class="fixed inset-0 z-[70] hidden flex-col justify-end md:justify-center items-center md:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh] mx-auto">
+            
+            <div class="p-5 md:p-6 bg-blue-600 text-white flex justify-between items-center rounded-t-3xl md:rounded-t-2xl shrink-0">
                 <h3 id="medModalTitle" class="text-xl font-bold">Stock Entry</h3>
-                <button onclick="closeModal('medicineModal')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20"><i class="fas fa-times"></i></button>
+                <button onclick="closeModal('medicineModal')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20"><i class="fas fa-times"></i></button>
             </div>
-            <form id="medForm" class="p-6 space-y-4 overflow-y-auto">
-                <input type="hidden" id="editIndex">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Name</label>
-                    <input type="text" id="medName" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
+            
+            <form id="medForm" class="flex flex-col flex-1 min-h-0">
+                <div class="p-5 md:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                    <input type="hidden" id="editIndex">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Name</label>
+                        <input type="text" id="medName" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
+                            <select id="medCategory" class="w-full px-4 py-3 bg-slate-50 border rounded-xl">
+                                <option>Mother Tincture</option>
+                                <option>Dilution</option>
+                                <option>Trituration</option>
+                                <option>Biochemic</option>
+                                <option>Patent</option>
+                                <option>Liquid</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Unit</label>
+                            <select id="medUnit" class="w-full px-4 py-3 bg-slate-50 border rounded-xl disabled:opacity-50 disabled:cursor-not-allowed">
+                                <option value="pcs">Pieces</option>
+                                <option value="ml">ml</option>
+                                <option value="l">Litre</option>
+                                <option value="g">gram</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Type/Power</label>
+                            <input type="text" id="medType" class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Expiry</label>
+                            <input type="date" id="medExpiry" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buying Price (₹)</label>
+                            <input type="number" step="0.01" id="medBuyPrice" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Selling Price (₹)</label>
+                            <input type="number" step="0.01" id="medSellPrice" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Quantity</label>
+                        <input type="number" id="medStock" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
+                    </div>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                        <select id="medCategory" class="w-full px-4 py-3 bg-slate-50 border rounded-xl">
-                            <option>Mother Tincture</option><option>Dilution</option><option>Trituration</option><option>Biochemic</option><option>Patent</option><option>Liquid</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Unit</label>
-                        <select id="medUnit" class="w-full px-4 py-3 bg-slate-50 border rounded-xl">
-                            <option value="pcs">Pieces</option><option value="ml">ml</option><option value="l">Litre</option><option value="g">gram</option>
-                        </select>
-                    </div>
+
+                <div class="p-5 md:p-6 border-t border-slate-100 bg-slate-50 shrink-0 md:rounded-b-2xl">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl">Save Stock</button>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Type/Power</label>
-                        <input type="text" id="medType" class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Expiry</label>
-                        <input type="date" id="medExpiry" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Buying Price (₹)</label>
-                        <input type="number" step="0.01" id="medBuyPrice" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Selling Price (₹)</label>
-                        <input type="number" step="0.01" id="medSellPrice" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Quantity</label>
-                    <input type="number" id="medStock" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
-                </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl">Save Stock</button>
             </form>
         </div>
     </div>
 
-    <!-- Sale Modal -->
-    <div id="salesModal" class="fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center z-[70] hidden p-4">
-        <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col">
-            <div class="p-6 bg-slate-900 text-white flex justify-between items-center">
+    <div id="salesModal" class="fixed inset-0 z-[70] hidden flex-col justify-end md:justify-center items-center md:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh] mx-auto">
+            
+            <div class="p-5 md:p-6 bg-slate-900 text-white flex justify-between items-center rounded-t-3xl md:rounded-t-2xl shrink-0">
                 <h3 class="text-xl font-bold">Record Sale</h3>
-                <button onclick="closeModal('salesModal')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/20"><i class="fas fa-times"></i></button>
+                <button onclick="closeModal('salesModal')" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20"><i class="fas fa-times"></i></button>
             </div>
-            <form id="salesForm" class="p-6 space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
-                    <input type="date" id="saleDate" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
-                </div>
-                <div class="relative">
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Search Medicine</label>
-                    <input type="text" id="saleMedSearch" placeholder="Start typing..." class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none" oninput="filterSaleMedicines()" autocomplete="off">
-                    <input type="hidden" id="selectedMedId" required>
-                    <div id="saleSearchResults" class="hidden absolute top-full left-0 right-0 bg-white border rounded-xl mt-1 premium-shadow search-results-container"></div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Quantity Sold <span id="saleUnitDisplay" class="text-blue-600"></span></label>
-                    <input type="number" id="saleQty" value="1" min="1" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
-                </div>
-                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Fixed MRP?</span>
-                        <input type="checkbox" id="useStockPrice" checked onchange="toggleSalePriceField()" class="w-6 h-6 rounded text-blue-600 cursor-pointer">
+            
+            <form id="salesForm" class="flex flex-col flex-1 min-h-0">
+                <div class="p-5 md:p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Date</label>
+                        <input type="date" id="saleDate" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
                     </div>
-                    <div id="customPriceDiv" class="hidden mb-2">
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Selling Price (₹ / unit)</label>
-                        <input type="number" step="0.01" id="customSellPrice" class="w-full px-4 py-3 bg-white border rounded-xl outline-none">
+                    <div class="relative">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Search Medicine</label>
+                        <input type="text" id="saleMedSearch" placeholder="Start typing..." class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none" oninput="filterSaleMedicines()" autocomplete="off">
+                        <input type="hidden" id="selectedMedId" required>
+                        <div id="saleSearchResults" class="hidden absolute top-full left-0 right-0 bg-white border rounded-xl mt-1 premium-shadow search-results-container"></div>
                     </div>
-                    <div id="priceIndicator" class="text-xs text-slate-500 font-bold bg-white px-3 py-2 rounded-lg border italic">Select medicine...</div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Quantity Sold <span id="saleUnitDisplay" class="text-blue-600"></span></label>
+                        <input type="number" id="saleQty" value="1" min="1" required class="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none">
+                    </div>
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Fixed MRP?</span>
+                            <input type="checkbox" id="useStockPrice" checked onchange="toggleSalePriceField()" class="w-6 h-6 rounded text-blue-600 cursor-pointer">
+                        </div>
+                        <div id="customPriceDiv" class="hidden mb-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Selling Price (₹ / unit)</label>
+                            <input type="number" step="0.01" id="customSellPrice" class="w-full px-4 py-3 bg-white border rounded-xl outline-none">
+                        </div>
+                        <div id="priceIndicator" class="text-xs text-slate-500 font-bold bg-white px-3 py-2 rounded-lg border italic">Select medicine...</div>
+                    </div>
                 </div>
-                <button type="submit" id="saleSubmitBtn" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> Submit Sale</button>
+
+                <div class="p-5 md:p-6 border-t border-slate-100 bg-slate-50 shrink-0 md:rounded-b-2xl">
+                    <button type="submit" id="saleSubmitBtn" class="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2"><i class="fas fa-check-circle"></i> Submit Sale</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- Notifications -->
-    <div id="toast" class="fixed top-6 right-6 left-6 md:left-auto md:w-80 z-[100] transform -translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3">
+    <div id="toast" class="fixed top-6 right-6 left-6 md:left-auto md:w-80 z-[120] transform -translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-none">
         <div id="toastIcon" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"></div>
         <p id="toastMsg" class="text-sm font-semibold"></p>
     </div>
@@ -332,6 +364,17 @@
         const STORAGE_KEY = 'avijit_pharma_stock_v2.9';
         const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSf8xYihWDT3c5L6F_X9CYUyPC0_U_mIMUVJsowog7Fkx13JHg/formResponse";
         let inventory = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+        // Liquid constraint logic enforcement
+        document.getElementById('medCategory').addEventListener('change', function(e) {
+            const unitEl = document.getElementById('medUnit');
+            if (e.target.value === 'Liquid') {
+                unitEl.value = 'ml';
+                unitEl.disabled = true; // Lock to milliliters
+            } else {
+                unitEl.disabled = false;
+            }
+        });
 
         function toggleSideMenu(isOpen) {
             const menu = document.getElementById('sideMenu');
@@ -392,14 +435,14 @@
                     const expStatus = getExpiryStatus(med.expiryDate);
                     return `<div class="glass-card p-4 rounded-2xl flex flex-col gap-3 relative border-l-4 ${low || expStatus === 'expired' ? 'border-l-red-500' : 'border-l-blue-200'}">
                         <div class="flex justify-between items-start">
-                            <div><h4 class="font-bold text-slate-900 text-lg">${med.name}</h4><div class="flex items-center gap-2 mt-1"><span class="bg-blue-100 text-blue-800 text-[9px] font-black px-1.5 py-0.5 rounded uppercase">${med.category}</span></div></div>
-                            <div class="text-right font-black text-slate-900">₹${med.sellPrice}/${med.unit}</div>
+                            <div class="truncate mr-2"><h4 class="font-bold text-slate-900 text-lg truncate">${med.name}</h4><div class="flex items-center gap-2 mt-1"><span class="bg-blue-100 text-blue-800 text-[9px] font-black px-1.5 py-0.5 rounded uppercase">${med.category}</span></div></div>
+                            <div class="text-right font-black text-slate-900 shrink-0">₹${med.sellPrice}/${med.unit}</div>
                         </div>
                         <div class="flex items-center justify-between bg-slate-50 p-2 rounded-xl text-center">
                             <div class="flex-1"><p class="text-[8px] uppercase font-bold text-slate-400">Stock</p><p class="${low ? 'text-red-600 font-bold' : 'font-bold'}">${med.stock} ${med.unit}</p></div>
                             <div class="flex-1 border-l border-slate-200"><p class="text-[8px] uppercase font-bold text-slate-400">Expiry</p><p class="${expStatus === 'expired' ? 'text-red-600 font-black' : (expStatus === 'near' ? 'text-orange-500 font-bold' : 'font-bold')} text-xs">${new Date(med.expiryDate).toLocaleDateString()}</p></div>
                         </div>
-                        <button onclick="editMedicine(${idx})" class="py-2.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold">Edit Stock</button>
+                        <button onclick="editMedicine(${idx})" class="py-2.5 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold w-full">Edit Stock</button>
                     </div>`;
                 }).join('');
             }
@@ -427,10 +470,10 @@
                     const idx = inventory.findIndex(i => i.id === m.id);
                     const status = getExpiryStatus(m.expiryDate);
                     const isLow = m.stock <= 5;
-                    html += `<div class="bg-white border p-2 rounded-xl flex items-center gap-3 shadow-sm">
+                    html += `<div class="bg-white border p-2 rounded-xl flex items-center justify-between gap-3 shadow-sm w-full md:w-auto">
                         <div class="flex flex-col"><span class="text-xs font-bold">${m.name}</span>
                         <span class="text-[9px] font-black uppercase ${isLow ? 'text-red-600' : 'text-orange-600'}">${isLow ? 'Low Stock' : status.toUpperCase()}</span></div>
-                        <button onclick="editMedicine(${idx})" class="bg-slate-900 text-white text-[9px] font-bold px-3 py-1.5 rounded-lg">MANAGE</button>
+                        <button onclick="editMedicine(${idx})" class="bg-slate-900 text-white text-[9px] font-bold px-3 py-1.5 rounded-lg shrink-0">MANAGE</button>
                     </div>`;
                 });
                 list.innerHTML = html;
@@ -459,17 +502,28 @@
             updateSalePriceInfo();
         }
 
+        // Updated Modal Logic to strictly toggle flex class
         function openModal(id) {
             document.getElementById('modalOverlay').classList.remove('hidden');
-            document.getElementById(id).classList.remove('hidden');
+            const modal = document.getElementById(id);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
             document.body.style.overflow = 'hidden';
+            
             if (id === 'salesModal') document.getElementById('saleDate').valueAsDate = new Date();
+            if (id === 'medicineModal' && document.getElementById('editIndex').value === "") {
+                document.getElementById('medForm').reset();
+                document.getElementById('medUnit').disabled = false;
+            }
         }
 
         function closeModal(id) {
             document.getElementById('modalOverlay').classList.add('hidden');
-            document.getElementById(id).classList.add('hidden');
+            const modal = document.getElementById(id);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
             document.body.style.overflow = 'auto';
+            if (id === 'medicineModal') document.getElementById('editIndex').value = "";
         }
 
         function closeAllModals() { closeModal('medicineModal'); closeModal('salesModal'); toggleSideMenu(false); }
@@ -497,7 +551,11 @@
             document.getElementById('editIndex').value = idx;
             document.getElementById('medName').value = m.name;
             document.getElementById('medCategory').value = m.category;
-            document.getElementById('medUnit').value = m.unit;
+            
+            const unitEl = document.getElementById('medUnit');
+            unitEl.value = m.unit;
+            unitEl.disabled = (m.category === 'Liquid');
+            
             document.getElementById('medType').value = m.type;
             document.getElementById('medExpiry').value = m.expiryDate;
             document.getElementById('medBuyPrice').value = m.buyPrice;
@@ -507,7 +565,7 @@
         }
 
         function deleteMedicine(idx) {
-            if (confirm("Delete this?")) { inventory.splice(idx, 1); saveToStorage(); showToast("Deleted", "info"); }
+            if (confirm("Delete this item?")) { inventory.splice(idx, 1); saveToStorage(); showToast("Deleted", "info"); }
         }
 
         function updateSalePriceInfo() {
@@ -534,17 +592,15 @@
             const btn = document.getElementById('saleSubmitBtn');
             btn.disabled = true; btn.innerHTML = '<i class="fas fa-sync fa-spin"></i> Processing...';
             
-            // MATH: Total Amount
             const unitPrice = document.getElementById('useStockPrice').checked ? med.sellPrice : parseFloat(document.getElementById('customSellPrice').value);
             const totalAmount = (qty * unitPrice).toFixed(2);
 
-            // PAYLOAD: Clean numerical submission
             const pay = new URLSearchParams();
             pay.append('entry.664553955', document.getElementById('saleDate').value);
             pay.append('entry.1352198491', med.name);
-            pay.append('entry.385278366', qty); // Numeric only
+            pay.append('entry.385278366', qty);
             pay.append('entry.2088116483', med.buyPrice);
-            pay.append('entry.1600120543', totalAmount); // Calculated Total Amount
+            pay.append('entry.1600120543', totalAmount);
 
             const form = document.createElement('form');
             form.action = GOOGLE_FORM_URL; form.method = "POST"; form.target = "hidden_iframe";

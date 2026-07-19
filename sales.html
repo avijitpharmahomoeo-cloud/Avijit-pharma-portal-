@@ -6,7 +6,6 @@
     <title>Sales Insights Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide-react/0.263.1/lucide-react.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
@@ -71,7 +70,7 @@
             </div>
 
             <button onclick="fetchSheetData()" class="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors flex items-center gap-2">
-                <span id="refreshIcon">Refresh</span>
+                <span id="refreshText">Refresh</span>
                 <div id="loadingSpinner" class="loader hidden"></div>
             </button>
         </div>
@@ -94,7 +93,7 @@
                 <p class="text-xs text-slate-400 mt-2 font-medium" id="topMedicineQty">0 units sold</p>
             </div>
             <div class="premium-card rounded-2xl p-6">
-                <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Items Sold</p>
+                <p class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-1">Total Quantity Sold</p>
                 <h3 class="text-3xl font-bold text-slate-900" id="totalItems">0</h3>
                 <p class="text-xs text-slate-400 mt-2 font-medium">Distinct Products: <span id="distinctCount">0</span></p>
             </div>
@@ -103,17 +102,13 @@
         <!-- Charts Section -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             <div class="premium-card rounded-2xl p-8">
-                <h4 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                    Medicine Distribution (Quantity)
-                </h4>
+                <h4 class="text-lg font-bold text-slate-800 mb-6">Medicine Distribution (Quantity)</h4>
                 <div class="relative h-[300px]">
                     <canvas id="medicinePieChart"></canvas>
                 </div>
             </div>
             <div class="premium-card rounded-2xl p-8">
-                <h4 class="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-                    Sales vs Profit Analysis
-                </h4>
+                <h4 class="text-lg font-bold text-slate-800 mb-6">Sales vs Profit Analysis</h4>
                 <div class="relative h-[300px]">
                     <canvas id="salesBarChart"></canvas>
                 </div>
@@ -124,7 +119,7 @@
         <div class="premium-card rounded-2xl overflow-hidden">
             <div class="p-6 border-b border-slate-100 flex justify-between items-center">
                 <h4 class="text-lg font-bold text-slate-800">Recent Transactions</h4>
-                <div id="statusIndicator" class="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">Live Connection</div>
+                <div id="statusIndicator" class="text-xs font-semibold px-2 py-1 bg-slate-100 text-slate-600 rounded-full">Initializing...</div>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
@@ -132,7 +127,7 @@
                         <tr>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Date</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Medicine Name</th>
-                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Qty</th>
+                            <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase">Qty (Unit)</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Selling Price</th>
                             <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right">Profit</th>
                         </tr>
@@ -154,13 +149,21 @@
         let rawData = [];
         let pieChart, barChart;
 
-        // Initialize App
+        const currencyFormatter = new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            minimumFractionDigits: 2
+        });
+
         window.onload = function() {
-            // Set default inputs
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('dateInput').value = today;
-            document.getElementById('monthInput').value = today.substring(0, 7);
-            document.getElementById('yearInput').value = new Date().getFullYear();
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            
+            document.getElementById('dateInput').value = `${year}-${month}-${day}`;
+            document.getElementById('monthInput').value = `${year}-${month}`;
+            document.getElementById('yearInput').value = year;
             
             fetchSheetData();
         };
@@ -175,44 +178,61 @@
 
         async function fetchSheetData() {
             const spinner = document.getElementById('loadingSpinner');
-            const icon = document.getElementById('refreshIcon');
+            const btnText = document.getElementById('refreshText');
+            const status = document.getElementById('statusIndicator');
+            
             spinner.classList.remove('hidden');
-            icon.classList.add('hidden');
+            btnText.classList.add('hidden');
+            status.innerText = "Connecting to Sheet...";
 
             const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
 
             try {
                 const response = await fetch(url);
                 const text = await response.text();
-                
-                // Crucial extraction logic requested by user
                 const regex = /google\.visualization\.Query\.setResponse\((.*)\);/;
                 const match = text.match(regex);
                 
                 if (match && match[1]) {
                     const json = JSON.parse(match[1]);
                     processSheetData(json.table);
+                    status.innerText = `Connected | ${rawData.length} rows loaded`;
                 }
             } catch (error) {
-                console.error("Error fetching data:", error);
-                showNotification("Failed to connect to Google Sheets.");
+                console.error("Error:", error);
+                status.innerText = "Connection Failed";
             } finally {
                 spinner.classList.add('hidden');
-                icon.classList.remove('hidden');
+                btnText.classList.remove('hidden');
             }
+        }
+
+        function parseNumeric(val) {
+            if (val === null || val === undefined) return 0;
+            if (typeof val === 'number') return val;
+            // Clean string: remove commas, currency symbols, and text units
+            const cleaned = String(val).replace(/,/g, '').match(/[-+]?[0-9]*\.?[0-9]+/);
+            return cleaned ? parseFloat(cleaned[0]) : 0;
         }
 
         function processSheetData(table) {
             rawData = table.rows.map(row => {
                 const cells = row.c;
+                if (!cells || cells.length < 6) return null;
+
+                // Tab 4 (Index 3) is Quantity
+                const rawQty = cells[3]?.f || cells[3]?.v || "0";
+                const numericQty = parseNumeric(rawQty);
+
                 return {
                     date: parseSheetDate(cells[1]),
-                    name: cells[2]?.v || 'Unknown',
-                    qty: parseFloat(cells[3]?.v || 0),
-                    buyPrice: parseFloat(cells[4]?.v || 0),
-                    sellPrice: parseFloat(cells[5]?.v || 0)
+                    name: cells[2]?.v || 'N/A',
+                    displayQty: String(rawQty), // e.g., "10 ml"
+                    numericQty: numericQty,     // e.g., 10.0
+                    buyPrice: parseNumeric(cells[4]?.v),
+                    sellPrice: parseNumeric(cells[5]?.v)
                 };
-            }).filter(item => item.name !== 'Unknown');
+            }).filter(item => item && item.name !== 'N/A' && item.date !== null && item.name !== 'Name' && item.name !== 'Medicine Name');
 
             filterData();
         }
@@ -221,38 +241,39 @@
             if (!cell || !cell.v) return null;
             if (typeof cell.v === 'string' && cell.v.includes('Date')) {
                 const parts = cell.v.match(/\d+/g);
-                return new Date(parts[0], parts[1], parts[2]);
+                return new Date(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
             }
-            return new Date(cell.v);
+            if (cell.f) {
+                const d = new Date(cell.f);
+                if (!isNaN(d.getTime())) return d;
+            }
+            const d = new Date(cell.v);
+            return isNaN(d.getTime()) ? null : d;
         }
 
         function filterData() {
             const view = document.getElementById('viewType').value;
-            const dateInput = document.getElementById('dateInput').value;
-            const monthInput = document.getElementById('monthInput').value;
-            const yearInput = document.getElementById('yearInput').value;
-
             let filtered = [];
 
             if (view === 'daily') {
-                const targetDate = new Date(dateInput);
+                const inputVal = document.getElementById('dateInput').value;
+                const [y, m, d] = inputVal.split('-').map(Number);
                 filtered = rawData.filter(item => {
-                    return item.date && 
-                           item.date.getFullYear() === targetDate.getFullYear() &&
-                           item.date.getMonth() === targetDate.getMonth() &&
-                           item.date.getDate() === targetDate.getDate();
+                    const itemDate = item.date;
+                    return itemDate.getFullYear() === y &&
+                           (itemDate.getMonth() + 1) === m &&
+                           itemDate.getDate() === d;
                 });
             } else if (view === 'monthly') {
-                const [y, m] = monthInput.split('-');
+                const inputVal = document.getElementById('monthInput').value;
+                const [y, m] = inputVal.split('-').map(Number);
                 filtered = rawData.filter(item => {
-                    return item.date && 
-                           item.date.getFullYear() === parseInt(y) &&
-                           (item.date.getMonth() + 1) === parseInt(m);
+                    return item.date.getFullYear() === y &&
+                           (item.date.getMonth() + 1) === m;
                 });
             } else if (view === 'yearly') {
-                filtered = rawData.filter(item => {
-                    return item.date && item.date.getFullYear() === parseInt(yearInput);
-                });
+                const y = parseInt(document.getElementById('yearInput').value);
+                filtered = rawData.filter(item => item.date.getFullYear() === y);
             }
 
             updateDashboard(filtered);
@@ -261,78 +282,75 @@
         function updateDashboard(data) {
             let totalRevenue = 0;
             let totalCost = 0;
-            let totalItems = 0;
+            let totalNumericVolume = 0;
             const medStats = {};
 
             data.forEach(item => {
-                const revenue = item.qty * item.sellPrice;
-                const cost = item.qty * item.buyPrice;
+                const revenue = item.numericQty * item.sellPrice;
+                const cost = item.numericQty * item.buyPrice;
                 const profit = revenue - cost;
 
                 totalRevenue += revenue;
                 totalCost += cost;
-                totalItems += item.qty;
+                totalNumericVolume += item.numericQty;
 
                 if (!medStats[item.name]) {
-                    medStats[item.name] = { qty: 0, revenue: 0, profit: 0 };
+                    medStats[item.name] = { qty: 0, revenue: 0, profit: 0, unit: "" };
                 }
-                medStats[item.name].qty += item.qty;
+                medStats[item.name].qty += item.numericQty;
                 medStats[item.name].revenue += revenue;
                 medStats[item.name].profit += profit;
+                
+                // Extract unit if displayQty has a space (e.g., "10 ml")
+                if (item.displayQty.trim().includes(" ")) {
+                    const parts = item.displayQty.trim().split(/\s+/);
+                    if (parts.length > 1) medStats[item.name].unit = parts.slice(1).join(" ");
+                }
             });
 
             const totalProfit = totalRevenue - totalCost;
             const margin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
-            // Find Top Medicine
             let topMed = 'N/A';
-            let topQty = 0;
+            let topQtyNum = 0;
             for (let name in medStats) {
-                if (medStats[name].qty > topQty) {
-                    topQty = medStats[name].qty;
+                if (medStats[name].qty > topQtyNum) {
+                    topQtyNum = medStats[name].qty;
                     topMed = name;
                 }
             }
-
-            // Update UI with INR Symbol
-            const currencyFormatter = new Intl.NumberFormat('en-IN', {
-                style: 'currency',
-                currency: 'INR',
-                minimumFractionDigits: 2
-            });
 
             document.getElementById('totalRevenue').innerText = currencyFormatter.format(totalRevenue);
             document.getElementById('totalProfit').innerText = currencyFormatter.format(totalProfit);
             document.getElementById('profitMargin').innerText = `${margin.toFixed(1)}%`;
             document.getElementById('revenueCount').innerText = `${data.length} transactions`;
-            document.getElementById('totalItems').innerText = totalItems.toLocaleString();
+            document.getElementById('totalItems').innerText = totalNumericVolume.toLocaleString();
             document.getElementById('distinctCount').innerText = Object.keys(medStats).length;
             document.getElementById('topMedicine').innerText = topMed;
-            document.getElementById('topMedicineQty').innerText = `${topQty} units sold`;
+            document.getElementById('topMedicineQty').innerText = topMed !== 'N/A' ? `${topQtyNum} ${medStats[topMed].unit || 'units'}` : '0 units';
 
-            renderTable(data, currencyFormatter);
+            renderTable(data);
             renderCharts(medStats);
             
             document.getElementById('emptyState').classList.toggle('hidden', data.length > 0);
         }
 
-        function renderTable(data, formatter) {
+        function renderTable(data) {
             const body = document.getElementById('salesTableBody');
             body.innerHTML = '';
-            
             const sorted = [...data].sort((a, b) => b.date - a.date);
 
-            sorted.slice(0, 10).forEach(item => {
-                const profit = (item.sellPrice - item.buyPrice) * item.qty;
+            sorted.slice(0, 30).forEach(item => {
+                const profit = (item.sellPrice - item.buyPrice) * item.numericQty;
                 const row = document.createElement('tr');
-                row.className = "hover:bg-slate-50 transition-colors";
+                row.className = "hover:bg-slate-50 transition-colors border-b border-slate-50";
                 row.innerHTML = `
-                    <td class="px-6 py-4 text-sm text-slate-600 font-medium">${item.date.toLocaleDateString()}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500 font-medium">${item.date.toLocaleDateString('en-IN')}</td>
                     <td class="px-6 py-4 text-sm text-slate-900 font-bold">${item.name}</td>
-                    <td class="px-6 py-4 text-sm text-slate-600">${item.qty}</td>
-                    <td class="px-6 py-4 text-sm text-slate-900 text-right font-medium">${formatter.format(item.sellPrice)}</td>
+                    <td class="px-6 py-4 text-sm text-blue-700 font-bold bg-blue-50/20">${item.displayQty}</td>
+                    <td class="px-6 py-4 text-sm text-slate-900 text-right font-medium">${currencyFormatter.format(item.sellPrice)}</td>
                     <td class="px-6 py-4 text-sm font-semibold text-right ${profit >= 0 ? 'text-green-600' : 'text-red-600'}">
-                        ${formatter.format(profit)}
+                        ${currencyFormatter.format(profit)}
                     </td>
                 `;
                 body.appendChild(row);
@@ -361,10 +379,20 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 10 } } }
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { usePointStyle: true, font: { size: 10 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const medName = context.label;
+                                    const val = context.raw;
+                                    const unit = medStats[medName].unit || "";
+                                    return `${medName}: ${val} ${unit}`;
+                                }
+                            }
+                        }
                     },
-                    cutout: '70%'
+                    cutout: '65%'
                 }
             });
 
@@ -375,29 +403,19 @@
                 data: {
                     labels: labels,
                     datasets: [
-                        { label: 'Revenue', data: revenueData, backgroundColor: '#3b82f6', borderRadius: 6 },
-                        { label: 'Profit', data: profitData, backgroundColor: '#10b981', borderRadius: 6 }
+                        { label: 'Revenue', data: revenueData, backgroundColor: '#3b82f6', borderRadius: 4 },
+                        { label: 'Profit', data: profitData, backgroundColor: '#10b981', borderRadius: 4 }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
-                        x: { grid: { display: false } }
-                    },
-                    plugins: {
-                        legend: { position: 'top', align: 'end' }
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
                     }
                 }
             });
-        }
-
-        function showNotification(msg) {
-            const indicator = document.getElementById('statusIndicator');
-            indicator.innerText = msg;
-            indicator.classList.replace('bg-green-100', 'bg-red-100');
-            indicator.classList.replace('text-green-700', 'text-red-700');
         }
     </script>
 </body>

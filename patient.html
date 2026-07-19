@@ -6,6 +6,8 @@
     <title>Avijit Pharma Patient Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Added HTML5 QRCode Scanner Library -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -90,15 +92,33 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Dashboard Header -->
-        <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+        <div class="flex flex-col md:flex-row md:items-start justify-between mb-8 gap-4">
             <div>
                 <h2 class="text-3xl font-bold text-slate-900">Patient Directory</h2>
                 <p class="text-slate-500 mt-1">Manage and access centralized medical records</p>
             </div>
-            <div class="relative w-full md:w-96">
-                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" id="searchInput" placeholder="Search by name or case..." 
-                    class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all premium-shadow">
+            
+            <div class="w-full md:w-96 flex flex-col gap-3">
+                <!-- Standard Text Search -->
+                <div class="relative w-full">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="searchInput" placeholder="Search by name or case..." 
+                        class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all premium-shadow">
+                </div>
+                
+                <!-- New Barcode & Scanner Search -->
+                <div class="flex gap-2 w-full">
+                    <div class="relative w-full">
+                        <i class="fas fa-barcode absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="barcodeInput" placeholder="Enter barcode or scan..." 
+                            class="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all premium-shadow">
+                    </div>
+                    <button id="cameraScanBtn" class="bg-blue-600 text-white px-5 py-3 rounded-xl hover:bg-blue-700 transition-colors premium-shadow flex items-center justify-center flex-shrink-0" title="Scan with Mobile Camera">
+                        <i class="fas fa-camera text-lg"></i>
+                    </button>
+                </div>
+                <!-- Camera Viewport Container -->
+                <div id="reader" class="hidden w-full overflow-hidden rounded-xl border border-slate-200 bg-white"></div>
             </div>
         </div>
 
@@ -113,7 +133,7 @@
                 <i class="fas fa-user-slash text-2xl text-slate-400"></i>
             </div>
             <h3 class="text-lg font-medium text-slate-900">No patients found</h3>
-            <p class="text-slate-500">Try adjusting your search terms</p>
+            <p class="text-slate-500">Try adjusting your search terms or scan again</p>
         </div>
     </main>
 
@@ -179,7 +199,6 @@
                 const response = await fetch(URL);
                 const text = await response.text();
                 
-                // Use the requested Regex to extract JSON
                 const regex = /google\.visualization\.Query\.setResponse\((.*)\);/;
                 const match = text.match(regex);
                 
@@ -187,21 +206,16 @@
                     const data = JSON.parse(match[1]);
                     const rows = data.table.rows;
                     
-                    // Map data based on column instructions:
-                    // Tab 3 (index 2): Name
-                    // Tab 4 (index 3): Age
-                    // Tab 5 (index 4): Gender
-                    // Tab 6 (index 5): Phone
-                    // Tab 7 (index 6): Case Study
-                    patients = rows.map((row, index) => {
+                    // Filter from 2nd row and convert all values to strings to prevent search crashes
+                    patients = rows.slice(1).map((row, index) => {
                         const cols = row.c;
                         return {
                             id: index + 1,
-                            name: cols[2] ? cols[2].v : 'N/A',
-                            age: cols[3] ? cols[3].v : 'N/A',
-                            gender: cols[4] ? cols[4].v : 'N/A',
-                            phone: cols[5] ? cols[5].v : 'N/A',
-                            caseStudy: cols[6] ? cols[6].v : 'No case study recorded.'
+                            name: (cols[2] && cols[2].v != null) ? String(cols[2].v) : 'N/A',
+                            age: (cols[3] && cols[3].v != null) ? String(cols[3].v) : 'N/A',
+                            gender: (cols[4] && cols[4].v != null) ? String(cols[4].v) : 'N/A',
+                            phone: (cols[5] && cols[5].v != null) ? String(cols[5].v) : 'N/A',
+                            caseStudy: (cols[6] && cols[6].v != null) ? String(cols[6].v) : 'No case study recorded.'
                         };
                     }).filter(p => p.name !== 'N/A');
 
@@ -262,7 +276,6 @@
         }
 
         function downloadPDF(patient) {
-            // Populate hidden print section
             document.getElementById('print-id').textContent = 'AP-' + Math.random().toString(36).substr(2, 9).toUpperCase();
             document.getElementById('print-date').textContent = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
             document.getElementById('print-name').textContent = patient.name;
@@ -270,20 +283,115 @@
             document.getElementById('print-gender').textContent = patient.gender;
             document.getElementById('print-phone').textContent = patient.phone;
             document.getElementById('print-case-study').textContent = patient.caseStudy;
-
-            // Trigger Print Dialog
             window.print();
         }
 
-        // Search functionality
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = patients.filter(p => 
-                p.name.toLowerCase().includes(term) || 
-                p.caseStudy.toLowerCase().includes(term)
-            );
+        /* --- GLOBAL FILTER FUNCTION WITH STRING SAFETY --- */
+        function processSearch(term) {
+            // Check for undefined or null safety
+            if (!term) {
+                renderPatients(patients);
+                return;
+            }
+            
+            const lowerTerm = String(term).toLowerCase().trim();
+            const filtered = patients.filter(p => {
+                // Ensure every variable is safely a string before lowercasing to prevent TypeErrors
+                const sName = String(p.name || '').toLowerCase();
+                const sCase = String(p.caseStudy || '').toLowerCase();
+                const sPhone = String(p.phone || '').toLowerCase();
+                const sId = String(p.id || '').toLowerCase();
+                
+                return sName.includes(lowerTerm) || 
+                       sCase.includes(lowerTerm) || 
+                       sPhone.includes(lowerTerm) || 
+                       sId === lowerTerm;
+            });
             renderPatients(filtered);
+        }
+
+        // 1. Text Search Box
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            processSearch(e.target.value);
+            document.getElementById('barcodeInput').value = '';
         });
+
+        // 2. Manual Barcode Box
+        document.getElementById('barcodeInput').addEventListener('input', (e) => {
+            processSearch(e.target.value);
+            document.getElementById('searchInput').value = '';
+        });
+
+        /* --- HARDWARE SCANNER SUPPORT (USB/Bluetooth) --- */
+        let barcodeBuffer = '';
+        let lastKeyTime = Date.now();
+
+        document.addEventListener('keydown', (e) => {
+            // Ignore if user is manually typing inside input/textarea elements
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return; 
+            }
+
+            const currentTime = Date.now();
+            if (currentTime - lastKeyTime > 50) {
+                barcodeBuffer = '';
+            }
+            lastKeyTime = currentTime;
+
+            if (e.key === 'Enter') {
+                if (barcodeBuffer.length > 2) {
+                    document.getElementById('barcodeInput').value = barcodeBuffer;
+                    document.getElementById('searchInput').value = '';
+                    processSearch(barcodeBuffer);
+                    barcodeBuffer = '';
+                    e.preventDefault();
+                }
+            } else if (e.key.length === 1) { 
+                barcodeBuffer += e.key;
+            }
+        });
+
+        /* --- MOBILE CAMERA SCANNER SUPPORT --- */
+        let html5QrCode;
+        const cameraScanBtn = document.getElementById('cameraScanBtn');
+        const readerDiv = document.getElementById('reader');
+
+        cameraScanBtn.addEventListener('click', () => {
+            if (readerDiv.classList.contains('hidden')) {
+                readerDiv.classList.remove('hidden');
+                html5QrCode = new Html5Qrcode("reader");
+                
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 150 } },
+                    (decodedText) => {
+                        document.getElementById('barcodeInput').value = decodedText;
+                        document.getElementById('searchInput').value = '';
+                        processSearch(decodedText);
+                        stopScanner();
+                    },
+                    (errorMessage) => {
+                        // Ignore continuous read errors
+                    }
+                ).catch(err => {
+                    console.error("Scanner Error:", err);
+                    alert("Camera access denied or unavailable.");
+                    stopScanner();
+                });
+            } else {
+                stopScanner();
+            }
+        });
+
+        function stopScanner() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    readerDiv.classList.add('hidden');
+                }).catch(err => console.error(err));
+            } else {
+                readerDiv.classList.add('hidden');
+            }
+        }
 
         // Initialize
         window.onload = fetchPatientData;

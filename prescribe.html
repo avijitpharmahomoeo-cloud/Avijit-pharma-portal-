@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Added JsBarcode Library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
     <script>
         tailwind.config = {
@@ -261,6 +263,11 @@
     </div>
 
     <div id="print-area" class="print-only font-sans text-slate-800">
+        <!-- Barcode Area inserted at the very top -->
+        <div class="flex justify-center mb-6">
+            <svg id="print-barcode"></svg>
+        </div>
+        
         <!-- Print Header: Brand & Clinic Info -->
         <div class="print-header flex justify-between items-start">
             <div class="flex items-center gap-4">
@@ -529,6 +536,20 @@
 
                 const docRef = c[1] && c[1].v ? String(c[1].v).trim() : 'UNKNOWN';
                 
+                // --- BARCODE AND NAME EXTRACTION LOGIC ---
+                const generatedId = 'RX-' + Math.random().toString(36).substr(2, 6).toUpperCase() + '-' + index;
+                let rawPatientName = c[2] && c[2].v ? String(c[2].v) : 'Unknown';
+                let cleanPatientName = rawPatientName;
+                let barcodeNumber = generatedId; // Default fallback to ID if no barcode found
+                
+                if (rawPatientName.includes('/')) {
+                    const nameParts = rawPatientName.split('/');
+                    cleanPatientName = nameParts[0].trim();
+                    if (nameParts.length > 1 && nameParts[1].trim() !== '') {
+                        barcodeNumber = nameParts[1].trim(); // Extract barcode number
+                    }
+                }
+                
                 // Extract Medicines (Col 7-8, 9-10... up to 25-26)
                 let medicines = [];
                 let totalValue = 0;
@@ -546,12 +567,13 @@
                 }
 
                 return {
-                    id: 'RX-' + Math.random().toString(36).substr(2, 6).toUpperCase() + '-' + index,
+                    id: generatedId,
+                    barcodeNumber: barcodeNumber,
                     date: dateObj,
                     dateStr: formattedDateStr,
                     isNew: isNew,
                     docRef: docRef,
-                    patientName: c[2] && c[2].v ? c[2].v : 'Unknown',
+                    patientName: cleanPatientName, // Set cleaned name without barcode
                     patientAge: c[3] && c[3].v ? c[3].v : '-',
                     patientGender: c[4] && c[4].v ? c[4].v : '-',
                     patientPhone: c[5] && c[5].v ? String(c[5].v) : '-',
@@ -709,7 +731,7 @@
             const gstPercent = parseFloat(gstInput.value) || 0;
             preparePrintDOM(itemToPrint, gstPercent);
             
-            // Wait slightly for DOM updates
+            // Wait slightly for DOM updates and barcode rendering
             setTimeout(() => {
                 window.print();
                 closeGstModal();
@@ -717,6 +739,17 @@
         });
 
         function preparePrintDOM(data, gstPercent) {
+            // Generate Barcode at the top using just the barcodeNumber
+            JsBarcode("#print-barcode", data.barcodeNumber, {
+                format: "CODE128",
+                width: 1.2,
+                height: 30,
+                displayValue: true,
+                fontSize: 11,
+                fontOptions: "bold",
+                margin: 0
+            });
+
             // Populate Doctor
             document.getElementById('print-doc-name').textContent = data.doctorDetails.name;
             document.getElementById('print-doc-spec').textContent = data.doctorDetails.speciality;
@@ -725,7 +758,7 @@
 
             // Populate Patient
             document.getElementById('print-date').textContent = data.dateStr;
-            document.getElementById('print-pat-name').textContent = data.patientName;
+            document.getElementById('print-pat-name').textContent = data.patientName; // Patient name is now cleanly stripped
             document.getElementById('print-pat-age-sex').textContent = `${data.patientAge} / ${data.patientGender}`;
             document.getElementById('print-pat-phone').textContent = data.patientPhone;
             document.getElementById('print-ref-id').textContent = data.id;

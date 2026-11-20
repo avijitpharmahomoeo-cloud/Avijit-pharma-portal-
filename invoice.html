@@ -1107,10 +1107,12 @@
             history.unshift(record);
             localStorage.setItem('avijitInvoiceHistory', JSON.stringify(history));
             
-            // Clear Drafts
+            // Clear Drafts & Reset Current Invoice UI
             cart = [];
             nextCartId = 1;
             saveCartState();
+            renderCart();
+            handleDateChange();
             
             // Close & Print
             closeInvoiceModal();

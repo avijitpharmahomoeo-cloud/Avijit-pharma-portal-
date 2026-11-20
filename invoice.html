@@ -216,7 +216,7 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
-    <div id="toastContainer" class="fixed top-4 right-4 flex flex-col gap-2 z-[100]"></div>
+    <div id="toastContainer" class="fixed top-4 right-4 flex flex-col gap-2 z-[100] no-print"></div>
 
     <div class="no-print flex flex-col min-h-screen">
         
@@ -973,14 +973,11 @@
             const stickerGrid = document.getElementById('stickerGrid');
             stickerGrid.innerHTML = '';
 
-            let totalStickers = 0;
-
             cart.forEach(item => {
                 const count = Math.max(1, Math.round(Number(item.qty) || 1));
                 const { medName, medPower } = parseMedicineNameAndPower(item.name);
 
                 for (let i = 0; i < count; i++) {
-                    totalStickers++;
                     const card = document.createElement('div');
                     card.className = 'sticker-card';
                     card.innerHTML = `
@@ -1002,7 +999,6 @@
                 }
             });
 
-            showToast(`Preparing ${totalStickers} sticker${totalStickers > 1 ? 's' : ''} for printing...`, 'info');
             document.body.classList.add('printing-stickers');
 
             setTimeout(() => {
